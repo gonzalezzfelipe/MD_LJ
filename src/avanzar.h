@@ -6,7 +6,7 @@
 #include <math.h>
 
 
-int update_postitions(float* x, float* v, float* f, int n, float dt) {
+int update_postitions(float* x, float* v, float* f, int N, float dt) {
   /* Calculate new positions for the particles.
 
   Uses Verlet Algorithm:
@@ -35,28 +35,31 @@ int update_postitions(float* x, float* v, float* f, int n, float dt) {
       f = [f_x_0, f_y_0, f_z_0, f_x_1, f_y_1, f_z_1, ...]
           --------------------  -------------------
                 Particle 0          Particle 1
-  int n:
+  int N:
     Amount of particles. The length of the other vectors should be 3 * n
   float dt:
     Temporal step.
   */
   int particle, direction, aux;
-  for (particle = 0; particle < n; particle++) {
+  for (particle = 0; particle < N; particle++) {
     for (direction = 0; direction < 3; direction++) {
       aux = 3 * particle + j;
-      *(x + aux) = *(x + aux) + *(v + aux) * dt + *(2 + aux) * dt * dt / 2
+      *(x + aux) = *(x + aux) + *(v + aux) * dt + *(2 + aux) * dt * dt / 2;
     }
   }
   return 0;
 }
 
 
-int update_velocities(float* x, float* v, float* f, int n, float dt) {
-  /* Calculate new velocities for the particles.
+int update_velocities(float* v, float* f, int N, float dt) {
+  /* Calculate intermediate step for new velocities for the particles.
 
   Uses Verlet Algorithm:
 
     *) v(t + h) = v(t) + dt / 2 * (f(t + h) + f(t))
+
+  And it breaks it down into 2 v += dt / 2m * f, this way the forces in
+  both times dont have to be known simultaneously.
 
   Assumes m = 1.
 
@@ -80,19 +83,59 @@ int update_velocities(float* x, float* v, float* f, int n, float dt) {
       f = [f_x_0, f_y_0, f_z_0, f_x_1, f_y_1, f_z_1, ...]
           --------------------  -------------------
                 Particle 0          Particle 1
-  int n:
+  int N:
     Amount of particles. The length of the other vectors should be 3 * n
   float dt:
     Temporal step.
   */
+  for (int i = 0; i < N; i++){
+    for (int dir = 0; dir < 3; dir++) {
+      *(v + 3 * i + dir) += dt / 2 * *(f + 3 * i + dir);
+    }
+  }
   return 0;
 }
 
 
-int update_forces(float* x, float* v, float* f, int n, float dt) {
-  /* Calculate forces for each particle.
+int update_forces(float* x, float* v, float* f, int N, float dt) {
+  /* Calculate forces for each particle.*/
+}
 
+
+int timestep(float* x, float* v, float* f, int N, float dt) {
+  /* Make a step in time.
+
+  This includes updating positions, velocities and forces using the
+  Verlet algorithm:
+
+    * x(t + h) = x(t) + v(t) * dt + dt ** 2 / 2m f(t)
+    * v(t + h) = v(t) + dt / 2m * (f(t) + f(t + h))
+
+  The step in velocities depends on the forces after and before the
+  step, this can be calculated because forces depend solely on x.
+
+  To implement this, first new positions are calculated, then:
+
+    v = v + dt / 2m f
+    update_forces()
+    v = v + dt / 2m f
+
+  This way there's no need to know the forces at both times simultaneously.
   */
+  int i;
+
+  update_postitions(x, v, f, N, dt);
+  for (i = 0; i < N; i++){
+    for (dir = 0; dir < 3; dir++) {
+      *(v + 3 * i + dir) += dt / 2 * *(f + 3 * i + dir);
+    }
+  }
+  update_forces();
+  for (i = 0; i < N; i++){
+    for (dir = 0; dir < 3; dir++) {
+      *(v + 3 * i + dir) += dt / 2 * *(f + 3 * i + dir);
+    }
+  }
 }
 
 #endif
