@@ -1,6 +1,6 @@
 #include "general.h"
-#include "interaccion.h"
-#include "inicializar.h"
+// #include "interaccion.h"
+#include "init.h"
 #include "avanzar.h"
 #include "visualizacion.h"
 #include <stdio.h>
@@ -8,45 +8,77 @@
 #include <time.h>
 #include <unistd.h>
 
+#define DEF_DT 0.001
+#define DEF_FRAMES 100
+#define DEF_FRAMES_STEP 0
+#define DEF_FILENAME "test.lammpstrj"
+
+
 int main(int argc, char *argv[]){
+  /* Run MD simulation.
 
-  // Definicion del main
+  Parameters
+  ----------
+  int L:
+    Size of box.
+  float rho:
+    Desired density.
+  float T:
+    Desired temperature.
+  float dt, optional, default 0.001:
+    Temporal step.
+  int frames, optional, default 100:
+    Amount of frames to save on lammpstrj file.
+  int frames_step, optional, default 0:
+    Amount of frames to leave between saved frames.
+  char filename, optional, default: test.lammpstrj
+    Filename where to write results.
+  int seed, optional
+    Seed to feed random number generator. Default is current timestamp.
+  */
+  int L, frames, frames_step;
+  int* seed;
+  float T, rho, dt;
 
+  seed = (int*)malloc(sizeof(int));
 
+  sscanf(argv[1], "%d", &L);
+  sscanf(argv[2], "%f", &rho);
+  sscanf(argv[3], "%f", &T);
+  if (argc <= 5) sscanf(argv[4], "%f", &dt);
+  else dt = DEF_DT;
+  if (argc <= 6) sscanf(argv[5], "%d", &frames);
+  else frames = DEF_FRAMES;
+  if (argc <= 7) sscanf(argv[6], "%d", &frames_step);
+  else frames_step = DEF_FRAMES_STEP;
+  if (argc <= 8) char * filename = argv[7];
+  else char * filename = DEF_FILENAME;};
+  if (argc <= 9) sscanf(argv[8], "%d", &*seed);
+  else *seed = rand();
 
-//------------------ MAIN DE EJEMPLO PARA VISUALIZAR CON VMD ------------------//
-  int N = 100;
-  float L = 10, dx = 0.05;
-  float *x = (float *) malloc(3*N*sizeof(float));
-  float *v = (float *) malloc(3*N*sizeof(float));
+  int N;
 
-  // El formato del filename ".lammpstrj", ese VMD lo lee comodamente
-  char filename[255];
-  sprintf(filename, "prueba.lammpstrj");
-  int N_frames = 100;
+  // Initialize
+  N = amount_of_particles(rho, L);
+  printf("Amount of particles is: %d\n", N);
 
-// Armo un boomerang con un """""movimiento browniano"""""
-  for(int i = 0; i < 3*N; i++){
-    x[i] = x[i] + L*rand()/RAND_MAX; // Estado inicial random en la caja
-    v[i] = 0.0;
+  float* x = (float*)malloc(3 * N * sizeof(float));
+  float* v = (float*)malloc(3 * N * sizeof(float));
+  float* f = (float*)malloc(3 * N * sizeof(float));
+
+  rho = initial_positions(L, x, N);
+  printf("Actual density is: %f\n", rho);
+  initial_velocities(v, N, T);
+
+  // Termalize
+
+  // Evolve
+  for (int frame = 0; frame < frames; frame++) {
+    save_lammpstrj(filename, x, v, N, L, frame);
+    for (int i = 0; i < frames_step; i++) timestep(x, v, f, N, dt);
   }
-  for(int l = 0; l < N_frames; l++){
-    for(int i = 0; i < 3*N; i++){
-      x[i] = x[i] + dx*(2.0*rand()/RAND_MAX-1.0); // Genero perturbacion random
-    }
-    save_lammpstrj(filename, x, v, N, L, l);  // La guardo (append para 0<l)
-  }
-  // Hago la vuelta del boomerang
-  for(int l = 0; l < N_frames; l++){
-    load_lammpstrj(filename, x, v, N, &L, N_frames-1-l); // Cargo estado viejo
-    save_lammpstrj(filename, x, v, N, L, N_frames+l);    // Lo guardo (append)
-  }
+
   free(x);
   free(v);
-// Capaz notaron que las velocidades estan al pedo, nos va a servir guardarlas
-// para tener checkpoints de estados bien termalizados.
-// Checkpoint is love, checkpoint is life
-//-----------------------------------------------------------------------------//
-
   return 0;
 }
