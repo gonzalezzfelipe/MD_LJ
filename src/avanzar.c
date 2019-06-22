@@ -4,9 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "avanzar.h"
+#include "interaccion.h"
 
 
-int update_postitions(float* x, float* v, float* f, int N, float dt) {
+int update_postitions(float* x, float* v, float* f, int N, float dt, int L) {
   /* Calculate new positions for the particles.
 
   Uses Verlet Algorithm:
@@ -39,12 +41,16 @@ int update_postitions(float* x, float* v, float* f, int N, float dt) {
     Amount of particles. The length of the other vectors should be 3 * n
   float dt:
     Temporal step.
+  int L
+    Size of the box.
   */
   int particle, direction, aux;
   for (particle = 0; particle < N; particle++) {
     for (direction = 0; direction < 3; direction++) {
       aux = 3 * particle + direction;
-      *(x + aux) = *(x + aux) + *(v + aux) * dt + 2 * *(f + aux) * dt * dt / 2;
+      *(x + aux) += *(v + aux) * dt + 2 * *(f + aux) * dt * dt / 2;
+      if (*(x + aux) < 0) *(x + aux) -= ((int)*(x + aux) / L) * L - L;
+      *(x + aux) -= ((int)*(x + aux) / L) * L;
     }
   }
   return 0;
@@ -88,22 +94,12 @@ int update_velocities(float* v, float* f, int N, float dt) {
   float dt:
     Temporal step.
   */
-  for (int i = 0; i < N; i++){
-    for (int dir = 0; dir < 3; dir++) {
-      *(v + 3 * i + dir) += dt / 2 * *(f + 3 * i + dir);
-    }
-  }
+  for (int i = 0; i < 3 * N; i++) *(v + 3 * i) += dt / 2 * *(f + 3 * i);
   return 0;
 }
 
 
-int update_forces() {
-  /* Calculate forces for each particle.*/
-return 0;
-}
-
-
-int timestep(float* x, float* v, float* f, int N, float dt) {
+int timestep(float* x, float* v, float* f, int N, float dt, int L, float r_c, float *table_f, float *table_r2, int length) {
   /* Make a step in time.
 
   This includes updating positions, velocities and forces using the
@@ -123,11 +119,12 @@ int timestep(float* x, float* v, float* f, int N, float dt) {
 
   This way there's no need to know the forces at both times simultaneously.
   */
-  update_postitions(x, v, f, N, dt);
+  update_postitions(x, v, f, N, dt, L);
   update_velocities(v, f, N, dt);
-  update_forces();
+  update_forces(f, x, N, L, r_c, table_f, table_r2, length);
   update_velocities(v, f, N, dt);
   return 0;
 }
+
 
 #endif

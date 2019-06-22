@@ -1,6 +1,10 @@
+#ifndef INIT_H
+#define INIT_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "init.h"
 
 #define PI 3.141592
 
@@ -133,3 +137,44 @@ int initial_velocities(float* v, int n, float T) {
   }
   return 0;
 }
+
+
+int fill_forces_table(
+    float *table_r,
+    float *table_r2,
+    float *table_f,
+    float *table_v,
+    float r_c,
+    int length) {
+  /* Create table including r, r squared, F and V.
+
+  The idea is to have a table, indexed by r squared as not to have to
+  calculate the force at each step, and replace it with a lookup at this
+  table plus an interpolation.
+
+  NOTE: Indexed forces correspond to F / r, as to be able to do:
+    * Fx = x * table_f,
+    * Fy = y * table_f,
+    * Fz = z * table_f
+  */
+ float step = r_c * r_c / length;
+ float current = 0.0;
+ float current6;
+
+ float v_c = 4.0 / pow(r_c, 12) - 4.0 / pow(r_c, 6);
+
+ for (int i = 1; i < length; i++) {
+   current += step;
+
+   *(table_r + i) = sqrt(current);
+   *(table_r2 + i) = current;
+
+   current6 = current * current * current;
+   *(table_f + i) = 48.0 / current6 / current6 / current - 24.0 * current6 / current;
+   *(table_v + i) = 4.0 / current6 / current6 - 4.0 / current6 - v_c;
+ }
+ return 0;
+}
+
+
+#endif

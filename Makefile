@@ -4,11 +4,11 @@ CC = gcc
 LD = $(CC)
 
 SOURCE_C = $(wildcard src/*.c)
-OBJECTS_C = $(patsubst src/%.c, bin/%_c.o, $(SOURCE_C))
+OBJECTS_C = $(patsubst src/%.c, bin/%, $(SOURCE_C))
 
 
 CFLAGS = -std=gnu99 -O3 -Wall
-EXECUTABLE = md.e
+EXECUTABLE = moleculardynamics.e
 
 default: help
 
@@ -29,7 +29,7 @@ executable: $(EXECUTABLE)
 
 all: objects executable
 
-bin/%_c.o: src/%.c
+bin/%: src/%.c
 	$(CC) $(CFLAGS) -c $^ -o $@ -lm
 
 %.e: $(OBJECTS_C)
