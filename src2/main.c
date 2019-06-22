@@ -1,4 +1,3 @@
-#include "general.h"
 // #include "interaccion.h"
 #include "init.h"
 #include "avanzar.h"
@@ -47,15 +46,15 @@ int main(int argc, char *argv[]){
   sscanf(argv[1], "%d", &L);
   sscanf(argv[2], "%f", &rho);
   sscanf(argv[3], "%f", &T);
-  if (argc <= 5) sscanf(argv[4], "%f", &dt);
-  else dt = DEF_DT;
-  if (argc <= 6) sscanf(argv[5], "%d", &frames);
+  if (argc >= 5) sscanf(argv[4], "%f", &dt);
+  else dt = 0.001;
+  if (argc >= 6) sscanf(argv[5], "%d", &frames);
   else frames = DEF_FRAMES;
-  if (argc <= 7) sscanf(argv[6], "%d", &frames_step);
+  if (argc >= 7) sscanf(argv[6], "%d", &frames_step);
   else frames_step = DEF_FRAMES_STEP;
-  if (argc <= 8) strcpy(filename, argv[7]);
+  if (argc >= 8) strcpy(filename, argv[7]);
   else strcpy(filename, DEF_FILENAME);
-  if (argc <= 9) sscanf(argv[8], "%d", &*seed);
+  if (argc >= 9) sscanf(argv[8], "%d", &*seed);
   else *seed = rand();
 
   int N;
@@ -77,10 +76,11 @@ int main(int argc, char *argv[]){
   // Evolve
   for (int frame = 0; frame < frames; frame++) {
     save_lammpstrj(filename, x, v, N, L, frame);
-    for (int i = 0; i < frames_step; i++) timestep(x, v, f, N, dt);
+    for (int i = 0; i < frames_step + 1; i++) timestep(x, v, f, N, dt, L);
   }
 
   free(x);
   free(v);
+  free(f);
   return 0;
 }
