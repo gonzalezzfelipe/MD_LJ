@@ -60,20 +60,20 @@ float get_force_from_table(float r2, float r_c, float *table_f, float *table_r2,
 
 int update_forces(float *f, float *x, int N, int L, float r_c, float *table_f, float *table_r2, int length) {
   /* Update forces vector using table. */
-  float distance;
+  float distance, r2;
   float force;
 
+  for (int i = 0; i < 3 * N; i++) *(f + i) = 0;
+
   for (int i = 0; i < N - 1; i++) {
-    *(f + 3 * i) = 0;
-    *(f + 3 * i + 1) = 0;
-    *(f + 3 * i + 2) = 0;
     for (int j = i + 1; j < N; j++) {
-      distance = r_squared(x + 3 * i, x + 3 * j, L);
-      if (distance < r_c * r_c) {
-        force = get_force_from_table(distance, r_c, table_f, table_r2, length);
+      r2 = r_squared(x + 3 * i, x + 3 * j, L);
+      if (r2 < r_c * r_c) {
+        force = get_force_from_table(r2, r_c, table_f, table_r2, length);
         for (int dir = 0; dir < 3; dir++) {
-          *(f + 3 * i + dir) += force * (*(x + 3 * i + dir) - *(x + 3 * j + dir));
-          *(f + 3 * j + dir) -= force * (*(x + 3 * i + dir) - *(x + 3 * j + dir));
+          distance = min_diff(*(x + 3 * i + dir), *(x + 3 * j + dir), L);
+          *(f + 3 * i + dir) += force * distance;
+          *(f + 3 * j + dir) -= force * distance;
         }
       }
     }

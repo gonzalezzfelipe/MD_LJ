@@ -170,7 +170,7 @@ int fill_forces_table(
    *(table_r2 + i) = current;
 
    current6 = current * current * current;
-   *(table_f + i) = 48.0 / current6 / current6 / current - 24.0 * current6 / current;
+   *(table_f + i) = 48.0 / current6 / current6 / current - 24.0 / current6 / current;
    *(table_v + i) = 4.0 / current6 / current6 - 4.0 / current6 - v_c;
  }
  return 0;

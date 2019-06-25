@@ -94,7 +94,7 @@ int update_velocities(float* v, float* f, int N, float dt) {
   float dt:
     Temporal step.
   */
-  for (int i = 0; i < 3 * N; i++) *(v + 3 * i) += dt / 2 * *(f + 3 * i);
+  for (int i = 0; i < 3 * N; i++) *(v + i) += dt / 2 * *(f + i);
   return 0;
 }
 
