@@ -8,7 +8,7 @@
 #include "interaccion.h"
 
 
-int update_postitions(float* x, float* v, float* f, int N, float dt, int L) {
+int update_postitions(float* x, float* v, float* f, int N, float dt, float L) {
   /* Calculate new positions for the particles.
 
   Uses Verlet Algorithm:
@@ -41,16 +41,16 @@ int update_postitions(float* x, float* v, float* f, int N, float dt, int L) {
     Amount of particles. The length of the other vectors should be 3 * n
   float dt:
     Temporal step.
-  int L
+  float L
     Size of the box.
   */
   int particle, direction, aux;
   for (particle = 0; particle < N; particle++) {
     for (direction = 0; direction < 3; direction++) {
       aux = 3 * particle + direction;
-      *(x + aux) += *(v + aux) * dt + 2 * *(f + aux) * dt * dt / 2;
-      if (*(x + aux) < 0) *(x + aux) -= ((int)*(x + aux) / L) * L - L;
-      *(x + aux) -= ((int)*(x + aux) / L) * L;
+      *(x + aux) += *(v + aux) * dt + *(f + aux) * dt * dt / 2;
+      if (*(x + aux) < 0) *(x + aux) += L;
+      *(x + aux) = fmodf(*(x + aux), L);
     }
   }
   return 0;
@@ -94,12 +94,12 @@ int update_velocities(float* v, float* f, int N, float dt) {
   float dt:
     Temporal step.
   */
-  for (int i = 0; i < 3 * N; i++) *(v + i) += dt / 2 * *(f + i);
+  for (int i = 0; i < 3 * N; i++) *(v + i) += dt * *(f + i) / 2;
   return 0;
 }
 
 
-int timestep(float* x, float* v, float* f, int N, float dt, int L, float r_c, float *table_f, float *table_r2, int length) {
+int timestep(float* x, float* v, float* f, int N, float dt, float L, float r_c, float *table_f, float *table_r2, int length) {
   /* Make a step in time.
 
   This includes updating positions, velocities and forces using the

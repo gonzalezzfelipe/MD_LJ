@@ -7,19 +7,19 @@
 #include "interaccion.h"
 
 
-float min_diff(float x, float y, int periodicity) {
+float min_diff(float x, float y, float L) {
   /* Minimum distance between two points on a 1D periodical axis. */
   float delta;
   delta = x - y;
-  if (fabsf(delta) > periodicity * 1.0 / 2)  {
-    if (delta > 0) delta = periodicity - delta;
-    else delta = periodicity + delta;
+  if (fabsf(delta) > L * 1.0 / 2)  {
+    if (delta > 0) delta = L - delta;
+    else delta = L + delta;
   }
   return delta;
 }
 
 
-float r_squared(float* x_1, float* x_2, int size) {
+float r_squared(float* x_1, float* x_2, float L) {
   /* Calculate the min squared distance between two particles.
 
   Given that the system is periodic, the distance between two points is
@@ -35,10 +35,25 @@ float r_squared(float* x_1, float* x_2, int size) {
 
   distance = 0;
   for (i = 0; i < 3; i++) {
-    delta = min_diff(*(x_1 + i), *(x_2 + i), size);
-    if (delta > size * 1.0 / 2) delta = size - delta;
+    delta = min_diff(*(x_1 + i), *(x_2 + i), L);
     distance += delta * delta;
   }
+  // if (distance < 0.0001) {
+  //   printf("Rompe\n");
+  //   printf("%f\n", distance);
+  //   printf(
+  //     "x_1 = %f, %f, %f\n",
+  //     *(x_1 + 0),
+  //     *(x_1 + 1),
+  //     *(x_1 + 2)
+  //   );
+  //   printf(
+  //     "x_2 = %f, %f, %f\n",
+  //     *(x_2 + 0),
+  //     *(x_2 + 1),
+  //     *(x_2 + 2)
+  //   );
+  // }
   return distance;
 }
 
@@ -58,7 +73,7 @@ float get_force_from_table(float r2, float r_c, float *table_f, float *table_r2,
 }
 
 
-int update_forces(float *f, float *x, int N, int L, float r_c, float *table_f, float *table_r2, int length) {
+int update_forces(float *f, float *x, int N, float L, float r_c, float *table_f, float *table_r2, int length) {
   /* Update forces vector using table. */
   float distance, r2;
   float force;

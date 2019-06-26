@@ -2,6 +2,7 @@
 #include "init.h"
 #include "avanzar.h"
 #include "visualizacion.h"
+#include "medir.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -11,7 +12,8 @@
 #define DEF_DT 0.001
 #define DEF_FRAMES 100
 #define DEF_FRAMES_STEP 0
-#define DEF_FILENAME "test.lammpstrj"
+#define DEF_LAMMPSTRJ_FILENAME "test.lammpstrj"
+#define DEF_LOG_FILENAME "test.log"
 #define R_C 2.5
 #define TABLE_LENGTH 10000
 
@@ -21,7 +23,7 @@ int main(int argc, char *argv[]){
 
   Parameters
   ----------
-  int L:
+  float L:
     Size of box.
   float rho:
     Desired density.
@@ -33,19 +35,20 @@ int main(int argc, char *argv[]){
     Amount of frames to save on lammpstrj file.
   int frames_step, optional, default 0:
     Amount of frames to leave between saved frames.
-  char filename, optional, default: test.lammpstrj
+  char lamppstrj_filename, optional, default: test.lammpstrj
     Filename where to write results.
   int seed, optional
     Seed to feed random number generator. Default is current timestamp.
   */
-  int L, frames, frames_step;
+  int frames, frames_step;
   int* seed;
-  float T, rho, dt;
-  char filename[255];
+  float T, rho, dt, L;
+  char lamppstrj_filename[255];
+  char log_filename[255];
 
   seed = (int*)malloc(sizeof(int));
 
-  sscanf(argv[1], "%d", &L);
+  sscanf(argv[1], "%f", &L);
   sscanf(argv[2], "%f", &rho);
   sscanf(argv[3], "%f", &T);
   if (argc >= 5) sscanf(argv[4], "%f", &dt);
@@ -54,9 +57,11 @@ int main(int argc, char *argv[]){
   else frames = DEF_FRAMES;
   if (argc >= 7) sscanf(argv[6], "%d", &frames_step);
   else frames_step = DEF_FRAMES_STEP;
-  if (argc >= 8) strcpy(filename, argv[7]);
-  else strcpy(filename, DEF_FILENAME);
-  if (argc >= 9) sscanf(argv[8], "%d", &*seed);
+  if (argc >= 8) strcpy(lamppstrj_filename, argv[7]);
+  else strcpy(lamppstrj_filename, DEF_LAMMPSTRJ_FILENAME);
+  if (argc >= 9) strcpy(log_filename, argv[8]);
+  else strcpy(log_filename, DEF_LOG_FILENAME);
+  if (argc >= 10) sscanf(argv[9], "%d", &*seed);
   else *seed = rand();
 
   int N;
@@ -85,7 +90,14 @@ int main(int argc, char *argv[]){
 
   // Evolve
   for (int frame = 0; frame < frames; frame++) {
-    save_lammpstrj(filename, x, v, N, L, frame);
+    save_lammpstrj(lamppstrj_filename, x, v, N, L, frame);
+    write_log(frame, log_filename, rho, N, L, R_C, table_r2, table_v, table_f, TABLE_LENGTH, x, v, f);
+    for (int dir = 0; dir < 3; dir++) {
+      float mean_force = 0;
+      for (size_t aa = 0; aa < N; aa++) mean_force += *(f + 3 * aa + dir);
+      printf("%f, ", mean_force);
+    }
+    printf("\n");
     for (int i = 0; i < frames_step + 1; i++) timestep(x, v, f, N, dt, L, R_C, table_f, table_r2, TABLE_LENGTH);
   }
 

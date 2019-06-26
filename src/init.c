@@ -41,7 +41,7 @@ float sample_boltzmann(float T) {
 }
 
 
-int amount_of_particles(float rho, int L) {
+int amount_of_particles(float rho, float L) {
   /* Define amount of particles in arangement.
 
   Given a density rho and a volume L ** 3, the amount of particles are
@@ -51,7 +51,7 @@ int amount_of_particles(float rho, int L) {
   ----------
   float rho:
     Desired density of the arangement.
-  int L:
+  float L:
     Side of the cubic volume where to place the particles.
 
   Returns
@@ -65,14 +65,14 @@ int amount_of_particles(float rho, int L) {
 }
 
 
-float initial_positions(int L, float* x, int n) {
+float initial_positions(float L, float* x, int n) {
   /* Define initial positions for all particles.
 
   The particles will be set up on a simple qubic arangement.
 
   Parameters
   ----------
-  int L:
+  float L:
     Side of the cubic volume where to place the particles.
   float* x:
     Pointer to the vector that has the positions of every particle as:
@@ -86,7 +86,7 @@ float initial_positions(int L, float* x, int n) {
   float step;
 
   n_x = (int)cbrt(n);
-  step = L / 1.0 / n_x;
+  step = L / n_x;
 
   for (i = 0; i < n_x; i++) {
     for (j = 0; j < n_x; j++) {
