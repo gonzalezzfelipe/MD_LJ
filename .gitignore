@@ -13,3 +13,5 @@ md/*
 !md/*.bib
 !md/*.tex
 !md/*.pdf
+
+*temp*
