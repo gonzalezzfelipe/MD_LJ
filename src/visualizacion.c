@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 
-int save_lammpstrj(char *filename, float* x, float* v, int N, float L, int frame){
+int save_lammpstrj(char *filename, double* x, double* v, int N, double L, int frame){
   /* Save a frame on LAMMPSTRJ format.
 
   If it is the first frame, it initializes the file.
@@ -17,12 +17,12 @@ int save_lammpstrj(char *filename, float* x, float* v, int N, float L, int frame
 
   // Header.
 	fprintf(fp, "ITEM: TIMESTEP\n%d\nITEM: NUMBER OF ATOMS\n%d\nITEM: BOX BOUNDS pp pp pp\n", frame, N);
-	for(int l = 0; l < 3; l++) fprintf(fp, "0 %f\n", L);
+	for(int l = 0; l < 3; l++) fprintf(fp, "0 %lf\n", L);
 
   // Atoms positions.
   fprintf(fp, "ITEM: ATOMS id x y z vx vy vz \n");
 	for(int i = 0; i < N; i++) fprintf(
-    fp, "%d %f %f %f %f %f %f\n",
+    fp, "%d %lf %lf %lf %lf %lf %lf\n",
     i,  // Particle number
     x[3 * i], x[3 * i + 1], x[3 * i + 2],  // Position for each particle.
     v[3 * i], v[3 * i + 1], v[3 * i + 2]  // Velocity for each particle.
@@ -33,7 +33,7 @@ int save_lammpstrj(char *filename, float* x, float* v, int N, float L, int frame
 }
 
 
-int load_frame(void *fp, float* x, float* v, int N, float *L){
+int load_frame(void *fp, double* x, double* v, int N, double *L){
   /* Load LAMPPSTRJ frame into memory.
 
   Does so by reading through LAMMPSTRJ file stream. This way, if the
@@ -76,12 +76,12 @@ int load_frame(void *fp, float* x, float* v, int N, float *L){
 
   // Get box size.
   for(int l = 0; l < 2; l++) eof = fgets(buffer, 255, fp);
-  id = fscanf(fp, "0 %f\n", L);  // Load box size
+  id = fscanf(fp, "0 %lf\n", L);  // Load box size
   for(int l = 0; l < 2; l++) eof = fgets(buffer, 255, fp);
 
   for(int i = 0; i < N; i++){  // Load positions and velocities of each particle
     id = fscanf(
-      fp, "%d %f %f %f %f %f %f\n",
+      fp, "%d %lf %lf %lf %lf %lf %lf\n",
       &id,  // Id (unnecesary, as it is corresponded with position)
       x + 3 * i, x + 3 * i + 1, x + 3 * i + 2,  // Position (x, y ,z)
       v + 3 * i, v + 3 * i + 1, v + 3 * i + 2);  // Velocity (vx, vy ,vz)
@@ -90,7 +90,7 @@ int load_frame(void *fp, float* x, float* v, int N, float *L){
 }
 
 
-int load_lammpstrj(char *filename, float* x, float* v, int N, float *L, int frame){
+int load_lammpstrj(char *filename, double* x, double* v, int N, double *L, int frame){
   /* Load specific frame from LAMMPSTRJ filepath into x and v pointers.*/
   FILE *fp = fopen(filename, "r");
   int frame_file = load_frame(fp, x, v, N, L);

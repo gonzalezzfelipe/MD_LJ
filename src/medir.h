@@ -3,27 +3,27 @@
 
 
 // Termalizacion
-float verlet_coeff(float *x, float L, int N);
-float h_boltzmann(float *v, int N);
-float g_r(float *x, int N);
+double verlet_coeff(double *x, double L, int N);
+double h_boltzmann(double *v, int N);
+double g_r(double *x, int N);
 
 // Termodinamica
-float potential_energy(float *x, float *v, float *table_r2, float *table_v, int N, float L, float r_c, int lenght);
-float temperature(float *v, int N);
-float pressure(float rho, float T, float L, float *table_f, float *table_r, float r_c, int lenght, float *x, int N);
+double potential_energy(double *x, double *v, double *table_r2, double *table_v, int N, double L, double r_c, int lenght);
+double temperature(double *v, int N);
+double pressure(double rho, double T, double L, double *table_f, double *table_r, double r_c, int lenght, double *x, int N);
 
 // Escribir
 int write_log(
     int timestep,
     char* filename,
-    float rho,
+    double rho,
     int N,
-    float L,
-    float r_c,
-    float *table_r2,
-    float *table_v,
-    float *table_f,
+    double L,
+    double r_c,
+    double *table_r2,
+    double *table_v,
+    double *table_f,
     int lenght,
-    float *x,
-    float *v,
-    float *f);
+    double *x,
+    double *v,
+    double *f);

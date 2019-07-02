@@ -11,7 +11,7 @@
 
 #define DEF_DT 0.001
 #define DEF_FRAMES 100
-#define DEF_FRAMES_STEP 0
+#define DEF_FRAMES_STEP 1
 #define DEF_LAMMPSTRJ_FILENAME "test.lammpstrj"
 #define DEF_LOG_FILENAME "test.log"
 #define R_C 2.5
@@ -23,35 +23,35 @@ int main(int argc, char *argv[]){
 
   Parameters
   ----------
-  float L:
-    Size of box.
-  float rho:
+  double N:
+    Amount of particles.
+  double rho:
     Desired density.
-  float T:
+  double T:
     Desired temperature.
-  float dt, optional, default 0.001:
+  double dt, optional, default 0.001:
     Temporal step.
   int frames, optional, default 100:
     Amount of frames to save on lammpstrj file.
-  int frames_step, optional, default 0:
+  int frames_step, optional, default 1:
     Amount of frames to leave between saved frames.
   char lamppstrj_filename, optional, default: test.lammpstrj
     Filename where to write results.
   int seed, optional
     Seed to feed random number generator. Default is current timestamp.
   */
-  int frames, frames_step;
+  int frames, frames_step, N;
   int* seed;
-  float T, rho, dt, L;
+  double T, rho, dt;
   char lamppstrj_filename[255];
   char log_filename[255];
 
   seed = (int*)malloc(sizeof(int));
 
-  sscanf(argv[1], "%f", &L);
-  sscanf(argv[2], "%f", &rho);
-  sscanf(argv[3], "%f", &T);
-  if (argc >= 5) sscanf(argv[4], "%f", &dt);
+  sscanf(argv[1], "%d", &N);
+  sscanf(argv[2], "%lf", &rho);
+  sscanf(argv[3], "%lf", &T);
+  if (argc >= 5) sscanf(argv[4], "%lf", &dt);
   else dt = 0.001;
   if (argc >= 6) sscanf(argv[5], "%d", &frames);
   else frames = DEF_FRAMES;
@@ -64,23 +64,22 @@ int main(int argc, char *argv[]){
   if (argc >= 10) sscanf(argv[9], "%d", &*seed);
   else *seed = rand();
 
-  int N;
+  int L;
 
   // Initialize
-  N = amount_of_particles(rho, L);
-  printf("Amount of particles is: %d\n", N);
+  L = cbrt(N / 1.0 / rho);
 
-  float* x = (float*)malloc(3 * N * sizeof(float));
-  float* v = (float*)malloc(3 * N * sizeof(float));
-  float* f = (float*)malloc(3 * N * sizeof(float));
+  double* x = (double*)malloc(3 * N * sizeof(double));
+  double* v = (double*)malloc(3 * N * sizeof(double));
+  double* f = (double*)malloc(3 * N * sizeof(double));
 
-  float* table_r = (float*)malloc(TABLE_LENGTH * sizeof(float));
-  float* table_r2 = (float*)malloc(TABLE_LENGTH * sizeof(float));
-  float* table_f = (float*)malloc(TABLE_LENGTH * sizeof(float));
-  float* table_v = (float*)malloc(TABLE_LENGTH * sizeof(float));
+  double* table_r = (double*)malloc(TABLE_LENGTH * sizeof(double));
+  double* table_r2 = (double*)malloc(TABLE_LENGTH * sizeof(double));
+  double* table_f = (double*)malloc(TABLE_LENGTH * sizeof(double));
+  double* table_v = (double*)malloc(TABLE_LENGTH * sizeof(double));
 
   rho = initial_positions(L, x, N);
-  printf("Actual density is: %f\n", rho);
+  printf("Actual density is: %lf\n", rho);
   initial_velocities(v, N, T);
 
   fill_forces_table(table_r, table_r2, table_f, table_v, R_C, TABLE_LENGTH);
@@ -89,16 +88,11 @@ int main(int argc, char *argv[]){
   // Termalize
 
   // Evolve
+  printf("frame,r,r2,v,f\n");
   for (int frame = 0; frame < frames; frame++) {
     save_lammpstrj(lamppstrj_filename, x, v, N, L, frame);
     write_log(frame, log_filename, rho, N, L, R_C, table_r2, table_v, table_f, TABLE_LENGTH, x, v, f);
-    for (int dir = 0; dir < 3; dir++) {
-      float mean_force = 0;
-      for (size_t aa = 0; aa < N; aa++) mean_force += *(f + 3 * aa + dir);
-      printf("%f, ", mean_force);
-    }
-    printf("\n");
-    for (int i = 0; i < frames_step + 1; i++) timestep(x, v, f, N, dt, L, R_C, table_f, table_r2, TABLE_LENGTH);
+    for (int i = 0; i < frames_step; i++) timestep(x, v, f, N, dt, L, R_C, table_f, table_r2, TABLE_LENGTH);
   }
 
   free(x);

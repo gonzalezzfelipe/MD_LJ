@@ -3,6 +3,6 @@
 #include <stdlib.h>
 
 
-int update_postitions(float* x, float* v, float* f, int N, float dt, float L);
-int update_velocities(float* v, float* f, int N, float dt);
-int timestep(float* x, float* v, float* f, int N, float dt, float L, float r_c, float *table_f, float *table_r2, int length);
+int update_postitions(double* x, double* v, double* f, int N, double dt, double L);
+int update_velocities(double* v, double* f, int N, double dt);
+int timestep(double* x, double* v, double* f, int N, double dt, double L, double r_c, double *table_f, double *table_r2, int length);

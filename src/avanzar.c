@@ -8,7 +8,7 @@
 #include "interaccion.h"
 
 
-int update_postitions(float* x, float* v, float* f, int N, float dt, float L) {
+int update_postitions(double* x, double* v, double* f, int N, double dt, double L) {
   /* Calculate new positions for the particles.
 
   Uses Verlet Algorithm:
@@ -19,19 +19,19 @@ int update_postitions(float* x, float* v, float* f, int N, float dt, float L) {
 
   Parameters
   ----------
-  float* x:
+  double* x:
     Pointer to the vector that has the positions of every particle as:
 
       x = [x_0, y_0, z_0, x_1, y_1, z_1, ...]
           --------------  -------------
             Particle 0     Particle 1
-  float* v:
+  double* v:
     Pointer to the vector that has the velocities of every particle as:
 
       v = [v_x_0, v_y_0, v_z_0, v_x_1, v_y_1, v_z_1, ...]
           --------------------  -------------------
                 Particle 0          Particle 1
-  float* f:
+  double* f:
     Pointer to the vector that has the forces of every particle as:
 
       f = [f_x_0, f_y_0, f_z_0, f_x_1, f_y_1, f_z_1, ...]
@@ -39,25 +39,21 @@ int update_postitions(float* x, float* v, float* f, int N, float dt, float L) {
                 Particle 0          Particle 1
   int N:
     Amount of particles. The length of the other vectors should be 3 * n
-  float dt:
+  double dt:
     Temporal step.
-  float L
+  double L
     Size of the box.
   */
-  int particle, direction, aux;
-  for (particle = 0; particle < N; particle++) {
-    for (direction = 0; direction < 3; direction++) {
-      aux = 3 * particle + direction;
-      *(x + aux) += *(v + aux) * dt + *(f + aux) * dt * dt / 2;
-      if (*(x + aux) < 0) *(x + aux) += L;
-      *(x + aux) = fmodf(*(x + aux), L);
-    }
+  for (int i = 0; i < 3 * N; i++) {
+    *(x + i) += *(v + i) * dt + *(f + i) * dt * dt / 2;
+    if (*(x + i) < 0) *(x + i) += L;
+    else if (*(x + i) > L) *(x + i) -= L;
   }
   return 0;
 }
 
 
-int update_velocities(float* v, float* f, int N, float dt) {
+int update_velocities(double* v, double* f, int N, double dt) {
   /* Calculate intermediate step for new velocities for the particles.
 
   Uses Verlet Algorithm:
@@ -71,19 +67,19 @@ int update_velocities(float* v, float* f, int N, float dt) {
 
   Parameters
   ----------
-  float* x:
+  double* x:
     Pointer to the vector that has the positions of every particle as:
 
       x = [x_0, y_0, z_0, x_1, y_1, z_1, ...]
           --------------  -------------
             Particle 0     Particle 1
-  float* v:
+  double* v:
     Pointer to the vector that has the velocities of every particle as:
 
       v = [v_x_0, v_y_0, v_z_0, v_x_1, v_y_1, v_z_1, ...]
           --------------------  -------------------
                 Particle 0          Particle 1
-  float* f:
+  double* f:
     Pointer to the vector that has the forces of every particle as:
 
       f = [f_x_0, f_y_0, f_z_0, f_x_1, f_y_1, f_z_1, ...]
@@ -91,15 +87,15 @@ int update_velocities(float* v, float* f, int N, float dt) {
                 Particle 0          Particle 1
   int N:
     Amount of particles. The length of the other vectors should be 3 * n
-  float dt:
+  double dt:
     Temporal step.
   */
-  for (int i = 0; i < 3 * N; i++) *(v + i) += dt * *(f + i) / 2;
+  for (int i = 0; i < 3 * N; i++) *(v + i) = *(v + i) + *(f + i) * 0.5 * dt;
   return 0;
 }
 
 
-int timestep(float* x, float* v, float* f, int N, float dt, float L, float r_c, float *table_f, float *table_r2, int length) {
+int timestep(double* x, double* v, double* f, int N, double dt, double L, double r_c, double *table_f, double *table_r2, int length) {
   /* Make a step in time.
 
   This includes updating positions, velocities and forces using the

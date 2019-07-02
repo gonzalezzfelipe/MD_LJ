@@ -9,7 +9,7 @@
 #define PI 3.141592
 
 
-float sample_boltzmann(float T) {
+double sample_boltzmann(double T) {
   /* Get random sample from Maxwell - Boltzmann distribution.
 
   To sample this value, 10 different random samples between [-1, 1] and
@@ -24,15 +24,15 @@ float sample_boltzmann(float T) {
 
   Parameters
   ----------
-  float T:
+  double T:
     T of the sample.
 
   Returns
   -------
-  float: Random number sampled from Boltzmann distribution.
+  double: Random number sampled from Boltzmann distribution.
   */
   int i;
-  float sample;
+  double sample;
 
   sample = 0.0;
   for(i = 0; i < 10; i++) sample += 2 * rand() / 1.0 / RAND_MAX - 1;
@@ -41,7 +41,7 @@ float sample_boltzmann(float T) {
 }
 
 
-int amount_of_particles(float rho, float L) {
+int amount_of_particles(double rho, double L) {
   /* Define amount of particles in arangement.
 
   Given a density rho and a volume L ** 3, the amount of particles are
@@ -49,9 +49,9 @@ int amount_of_particles(float rho, float L) {
 
   Parameters
   ----------
-  float rho:
+  double rho:
     Desired density of the arangement.
-  float L:
+  double L:
     Side of the cubic volume where to place the particles.
 
   Returns
@@ -65,16 +65,16 @@ int amount_of_particles(float rho, float L) {
 }
 
 
-float initial_positions(float L, float* x, int n) {
+double initial_positions(double L, double* x, int n) {
   /* Define initial positions for all particles.
 
   The particles will be set up on a simple qubic arangement.
 
   Parameters
   ----------
-  float L:
+  double L:
     Side of the cubic volume where to place the particles.
-  float* x:
+  double* x:
     Pointer to the vector that has the positions of every particle as:
       x = [x_0, y_0, z_0, x_1, y_1, z_1, ...]
           --------------  -------------
@@ -83,7 +83,7 @@ float initial_positions(float L, float* x, int n) {
     Amount of particles.
   */
   int i, j, k, n_x, particle;
-  float step;
+  double step;
 
   n_x = (int)cbrt(n);
   step = L / n_x;
@@ -102,7 +102,7 @@ float initial_positions(float L, float* x, int n) {
 }
 
 
-int initial_velocities(float* v, int n, float T) {
+int initial_velocities(double* v, int n, double T) {
   /* Fill initial velocities vector.
 
   The velocities are defined following a Maxwell - Boltzmann distribution.
@@ -115,19 +115,19 @@ int initial_velocities(float* v, int n, float T) {
 
   Parameters
   ----------
-  float* v:
+  double* v:
     Pointer to the vector that has the velocities of every particle as:
       x = [x_0, y_0, z_0, x_1, y_1, z_1, ...]
           --------------  -------------
             Particle 0     Particle 1
   int n:
     Amount of particles.
-  float T:
+  double T:
     T of the sample.
   */
   int i, direction;
 
-  float mean;
+  double mean;
 
   for (i = 0; i < 3 * n; i++) *(v + i) = sample_boltzmann(T);
   for (direction = 0; direction < 3; direction++) {
@@ -140,11 +140,11 @@ int initial_velocities(float* v, int n, float T) {
 
 
 int fill_forces_table(
-    float *table_r,
-    float *table_r2,
-    float *table_f,
-    float *table_v,
-    float r_c,
+    double *table_r,
+    double *table_r2,
+    double *table_f,
+    double *table_v,
+    double r_c,
     int length) {
   /* Create table including r, r squared, F and V.
 
@@ -157,11 +157,11 @@ int fill_forces_table(
     * Fy = y * table_f,
     * Fz = z * table_f
   */
- float step = r_c * r_c / length;
- float current = 0.0;
- float current6;
+ double step = r_c * r_c / length;
+ double current = 0.0;
+ double current6;
 
- float v_c = 4.0 / pow(r_c, 12) - 4.0 / pow(r_c, 6);
+ double v_c = 4.0 / pow(r_c, 12) - 4.0 / pow(r_c, 6);
 
  for (int i = 1; i < length; i++) {
    current += step;
