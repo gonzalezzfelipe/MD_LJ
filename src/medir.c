@@ -10,6 +10,39 @@
 #define PI 3.141592
 
 
+double histogram(double *y, double *x, int n, double a, double b, int m) {
+  /* Generate a histogram from data.
+
+  Get data in vector 'x' of length n and bins it in histogram 'y' of
+  length 'm', in between the limits [a, b].
+
+     y[0]...y[m-1] ==> Normalized histogram values.
+     y[m]...y[2m-1] ==> mid value of each bin
+  */
+
+  int i, j;
+  double h, hh, s;
+
+  s = 1.0 / (double)n;
+  h = (b - a) / (double)m;
+  hh = h / 2.0;
+
+  for (i = 0; i < m; i++) {
+    *(y + i) = 0.0;
+    *(y + m + i) = (double)i * h + a + hh;
+  }
+
+  for(i = 0; i < n; i++) {
+    j = (int)floor((*(x + i) - a) / h);
+    if (j < 0) j = 0;
+    else if (j > m) j = m - 1;
+    y[j] += s;
+  }
+
+  return s;
+}
+
+
 double get_v_from_table(double r2, double r_c, double *table_v, double *table_r2, int length) {
   /* Interpolate potential value from table.*/
   int index = (int)(length * r2 / r_c / r_c);
@@ -55,10 +88,15 @@ double potential_energy(double *x, double *v, double *table_r2, double *table_v,
 }
 
 
-double temperature(double *v, int N) {
+double kinetic(double *v, int N) {
   double temp = 0;
   for (int i = 0; i < 3 * N; i++) temp += *(v + i) * *(v + i) / 2;
   return temp / N;
+}
+
+
+double temperature(double *v, int N) {
+  return kinetic(v, N) / 3;
 }
 
 
@@ -84,19 +122,70 @@ double pressure(double rho, double T, double L, double *table_f, double *table_r
 
 
 double verlet_coeff(double *x, double L, int N) {
+  /* Get Verlet Coefficient for the disposition of particles.
+
+  The Verlet coefficient is a meassure of the disorder of the particles.
+  If they are in a cubic arrangement, this will be 1. As it get messier,
+  it starts going to 0.
+  */
   double lambda = 0;
-  double aux = 0;
+
+  double m = L / cbrt(N / 1.0);  // Characteristic distance between particles.
 
   for (int dir = 0; dir < 3; dir++) {
-    for (int i = 0; i < N; i++) aux += cos(2 * PI / L * (*(x + 3 * i + dir) - L / 2));
+    double aux = 0;
+    for (int i = 0; i < N; i++) aux += cos(2 * PI / m * (*(x + 3 * i + dir) - m / 2));
     lambda += aux / N;
   }
-  return lambda;
+  return lambda / 3;
+}
+
+
+double h_boltzmann(double *v, int N) {
+  /* Get H from momentum distribution.
+
+  This is a way to meassure of the entropy of the system. (kind of)
+  Amount of bins is decided with Sturges Rule.
+
+    * bins = 1 + 3. 322 logN
+  */
+  int bins = (int)(1 + 3.322 * log((double)N));
+  int dir, i;
+  double aux;
+
+  double* p = (double*)malloc(N * sizeof(double));
+  double* f = (double*)malloc(2 * bins * sizeof(double));
+
+  double T = temperature(v, N);
+  double coeff = 1 / pow(4 * PI * T, 3 / 2);
+
+  // printf("p\n");
+  for (i = 0; i < N; i++) {
+    aux = 0;
+    for (dir = 0; dir < 3; dir++) aux += *(v + 3 * i + dir) * *(v + 3 * i + dir);
+    *(p + i) = coeff * exp(- aux / 2 / T);
+    // printf("%lf\n", *(p + i));
+  }
+
+  double min = 1000;
+  double max = -1;
+
+  for (i = 0; i < N; i++) {
+    if (*(p + i) < min) min = *(p + i);
+    else if (*(p + i) > max) max = *(p + i);
+  }
+
+  double step = histogram(f, p, N, min, max, bins);
+
+  double H = 0;
+  for (i = 0; i < bins; i++) H += *(f + i) * log(*(f + i)) * step;
+  return H;
 }
 
 
 int write_log(
     int timestep,
+    double time,
     char* filename,
     double rho,
     int N,
@@ -113,18 +202,22 @@ int write_log(
   /* Write log line with relevant metrics.*/
   FILE *fp;
 
+  double K = kinetic(v, N);
   double T = temperature(v, N);
   double V = potential_energy(x, v, table_r2, table_v, N, L, r_c, length);
-  double E = V + T;
+  double E = V + K;
   double P = pressure(rho, T, L, table_f, table_r2, r_c, length, x, N);
   double verlet = verlet_coeff(x, L, N);
+  double H = h_boltzmann(v, N);
 
   if (timestep) fp = fopen(filename, "a");
   else {
     fp = fopen(filename, "w");
-    fprintf(fp, "timestep,V,T,E,P,rho,verlet\n");
+    fprintf(fp, "timestep,time,V,K,E,T,P,rho,verlet,H\n");
   };
-  fprintf(fp, "%d,%lf,%lf,%lf,%lf,%lf,%lf\n", timestep, V, T, E, P, rho, verlet);
+  fprintf(
+    fp, "%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
+    timestep, time, V, K, E, T, P, rho, verlet, H);
   fclose(fp);
   return 0;
 }

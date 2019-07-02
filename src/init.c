@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include "init.h"
+#include "medir.h"
+#include "avanzar.h"
 
 #define PI 3.141592
 
@@ -174,6 +176,37 @@ int fill_forces_table(
    *(table_v + i) = 4.0 / current6 / current6 - 4.0 / current6 - v_c;
  }
  return 0;
+}
+
+int rescaling(
+    double T,
+    double relative_error,
+    int termalization,
+    double* x,
+    double* v,
+    double* f,
+    int N,
+    double dt,
+    double L,
+    double r_c,
+    double *table_f,
+    double *table_r2,
+    int length) {
+  /* Apply reescaling until desired temperature is achieved. */
+  int i;
+  float coeff;
+  double actual = temperature(v, N);
+  double error = fabs(actual - T) / T;
+
+  while (error > relative_error) {
+    for (i = 0; i < termalization; i++) timestep(x, v, f, N, dt, L, r_c, table_f, table_r2, length);
+    actual = temperature(v, N);
+    coeff = sqrt(T / actual);
+    for (i = 0; i < 3 * N; i++) *(v + i) = coeff * *(v + i);
+    printf("Desired Temperature: %f\n", T);
+    printf("Actual Temperature: %f\n", actual);
+  }
+  return 0;
 }
 
 

@@ -1,7 +1,15 @@
 bin/*
 !bin/README.md
+
 data/*.log
 data/*.lamppstrj
-*.lammpstrj
+
 *.e
-*.log
+
+*test*
+
+md/*
+!md/images
+!md/*.bib
+!md/*.tex
+!md/*.pdf
