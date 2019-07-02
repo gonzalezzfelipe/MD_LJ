@@ -1,5 +1,7 @@
 bin/*
-data/*
+!bin/README.md
+data/*.log
+data/*.lamppstrj
 *.lammpstrj
 *.e
 *.log
