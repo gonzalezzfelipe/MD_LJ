@@ -6,6 +6,7 @@
 #include <math.h>
 #include "medir.h"
 #include "interaccion.h"
+#include "objetos.h"
 
 #define PI 3.141592
 
@@ -43,16 +44,16 @@ double histogram(double *y, double *x, int n, double a, double b, int m) {
 }
 
 
-double get_v_from_table(double r2, double r_c, double *table_v, double *table_r2, int length) {
+double get_v_from_table(double r2, LookUpTable LUT) {
   /* Interpolate potential value from table.*/
-  int index = (int)(length * r2 / r_c / r_c);
-  if (index >= length - 1) return 0;
+  int index = (int)(LUT.length * r2 / LUT.r_c / LUT.r_c);
+  if (index >= LUT.length - 1) return 0;
   else {
     double r1, r0, v1, v0;
-    r1 = *(table_r2 + index + 1);
-    r0 = *(table_r2 + index + 0);
-    v1 = *(table_v + index + 1);
-    v0 = *(table_v + index + 0);
+    r1 = *(LUT.r2 + index + 1);
+    r0 = *(LUT.r2 + index + 0);
+    v1 = *(LUT.v + index + 1);
+    v0 = *(LUT.v + index + 0);
     return (v1 - v0) * (r2 - r0) / (r1 - r0) + v0;
   }
 }
@@ -69,48 +70,48 @@ double get_v_from_r2(double r2, double r_c) {
 }
 
 
-double potential_energy(double *x, double *v, double *table_r2, double *table_v, int N, double L, double r_c, int length){
+double potential_energy(Particles parts, LookUpTable LUT, double L) {
   int particle_i, particle_j;
   double r2, potential;
 
   potential = 0;
 
-  for (int i = 0; i < N - 1; i++) {
-    for (int j = i + 1; j < N; j++) {
+  for (int i = 0; i < parts.N - 1; i++) {
+    for (int j = i + 1; j < parts.N; j++) {
       particle_i = 3 * i;
       particle_j = 3 * j;
-      r2 = r_squared(x + particle_i, x + particle_j, L);
-      // potential += get_v_from_table(r2, r_c, table_v, table_r2, length);
-      potential += get_v_from_r2(r2, r_c);
+      r2 = r_squared(parts.x + particle_i, parts.x + particle_j, L);
+      potential += get_v_from_table(r2, LUT);
+      // potential += get_v_from_r2(r2, r_c);
     }
   }
-  return potential / N;
+  return potential / parts.N;
 }
 
 
-double kinetic(double *v, int N) {
-  double temp = 0;
-  for (int i = 0; i < 3 * N; i++) temp += *(v + i) * *(v + i) / 2;
-  return temp / N;
+double kinetic(Particles parts) {
+  double K = 0;
+  for (int i = 0; i < 3 * parts.N; i++) K += *(parts.v + i) * *(parts.v + i) / 2;
+  return K / parts.N;
 }
 
 
-double temperature(double *v, int N) {
-  return kinetic(v, N) / 3;
+double temperature(Particles parts) {
+  return kinetic(parts) / 3;
 }
 
 
-double pressure(double rho, double T, double L, double *table_f, double *table_r2, double r_c, int length, double *x, int N) {
+double pressure(double rho, double T, double L, LookUpTable LUT, Particles parts) {
   double p, r2, force, distance;
   int amount = 0;
 
   p = 0;
-  for (int i = 0; i < N - 1; i++) {
-    for (int j = i + 1; j < N; j++) {
-      r2 = r_squared(x + 3 * i, x + 3 * j, L);
-      force = get_force_from_table(r2, r_c, table_f, table_r2, length);
+  for (int i = 0; i < parts.N - 1; i++) {
+    for (int j = i + 1; j < parts.N; j++) {
+      r2 = r_squared(parts.x + 3 * i, parts.x + 3 * j, L);
+      force = get_force_from_table(r2, LUT);
       for (int dir = 0; dir < 3; dir++) {
-        distance = min_diff(*(x + 3 * i + dir), *(x + 3 * j + dir), L);
+        distance = min_diff(*(parts.x + 3 * i + dir), *(parts.x + 3 * j + dir), L);
         p += force * distance * distance;
       }
       amount++;
@@ -121,7 +122,7 @@ double pressure(double rho, double T, double L, double *table_f, double *table_r
 }
 
 
-double verlet_coeff(double *x, double L, int N) {
+double verlet_coeff(Particles parts, double L) {
   /* Get Verlet Coefficient for the disposition of particles.
 
   The Verlet coefficient is a meassure of the disorder of the particles.
@@ -130,85 +131,70 @@ double verlet_coeff(double *x, double L, int N) {
   */
   double lambda = 0;
 
-  double m = L / cbrt(N / 1.0);  // Characteristic distance between particles.
+  double m = L / cbrt(parts.N / 1.0);  // Characteristic distance between particles.
 
   for (int dir = 0; dir < 3; dir++) {
     double aux = 0;
-    for (int i = 0; i < N; i++) aux += cos(2 * PI / m * (*(x + 3 * i + dir) - m / 2));
-    lambda += aux / N;
+    for (int i = 0; i < parts.N; i++) aux += cos(2 * PI / m * (parts.x[3 * i + dir] - m / 2));
+    lambda += aux / parts.N;
   }
   return lambda / 3;
 }
 
 
-double h_boltzmann(double *v, int N) {
+double h_boltzmann(Particles parts) {
   /* Get H from momentum distribution.
 
   This is a way to meassure of the entropy of the system. (kind of)
   Amount of bins is decided with Sturges Rule.
-
     * bins = 1 + 3. 322 logN
   */
-  int bins = (int)(1 + 3.322 * log((double)N));
-  int dir, i;
-  double aux;
+  // int bins = (int)(1 + 3.322 * log((double)parts.N));
+  int bins = 50;
+  int i;
+  double step;
 
-  double* p = (double*)malloc(N * sizeof(double));
   double* f = (double*)malloc(2 * bins * sizeof(double));
-
-  double T = temperature(v, N);
-  double coeff = 1 / pow(4 * PI * T, 3 / 2);
-
-  // printf("p\n");
-  for (i = 0; i < N; i++) {
-    aux = 0;
-    for (dir = 0; dir < 3; dir++) aux += *(v + 3 * i + dir) * *(v + 3 * i + dir);
-    *(p + i) = coeff * exp(- aux / 2 / T);
-    // printf("%lf\n", *(p + i));
-  }
-
-  double min = 1000;
-  double max = -1;
-
-  for (i = 0; i < N; i++) {
-    if (*(p + i) < min) min = *(p + i);
-    else if (*(p + i) > max) max = *(p + i);
-  }
-
-  double step = histogram(f, p, N, min, max, bins);
+  double* v_dir = (double*)malloc(parts.N * sizeof(double));
 
   double H = 0;
-  for (i = 0; i < bins; i++) H += *(f + i) * log(*(f + i)) * step;
+  double Hdir = 0;
+
+  for (int dir = 0; dir < 3; dir++) {
+
+    for (i = 0; i < parts.N; i++) v_dir[i] = parts.v[3 * i + dir];
+
+    double min = 1000;
+    double max = -1000;
+    double curr;
+
+    for (i = 0; i < parts.N; i++) {
+      curr = v_dir[i];
+      if (curr < min) min = curr;
+      else if (curr > max) max = curr;
+    }
+    step = histogram(f, v_dir, parts.N, min, max, bins);
+    for (i = 0; i < bins; i++) if (*(f + i)) H += *(f + i) * log(*(f + i)) * step;
+
+    H += Hdir / 3;
+  }
+  free(f);
+  free(v_dir);
   return H;
 }
 
 
-int write_log(
-    int timestep,
-    double time,
-    char* filename,
-    double rho,
-    int N,
-    double L,
-    double r_c,
-    double *table_r2,
-    double *table_v,
-    double *table_f,
-    int length,
-    double *x,
-    double *v,
-    double *f
-  ) {
+int write_log(int timestep, double time, char* filename, double rho, double L, LookUpTable LUT, Particles parts) {
   /* Write log line with relevant metrics.*/
   FILE *fp;
 
-  double K = kinetic(v, N);
-  double T = temperature(v, N);
-  double V = potential_energy(x, v, table_r2, table_v, N, L, r_c, length);
+  double K = kinetic(parts);
+  double T = temperature(parts);
+  double V = potential_energy(parts, LUT, L);
   double E = V + K;
-  double P = pressure(rho, T, L, table_f, table_r2, r_c, length, x, N);
-  double verlet = verlet_coeff(x, L, N);
-  double H = h_boltzmann(v, N);
+  double P = pressure(rho, T, L, LUT, parts);
+  double verlet = verlet_coeff(parts, L);
+  double H = h_boltzmann(parts);
 
   if (timestep) fp = fopen(filename, "a");
   else {

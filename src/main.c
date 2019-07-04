@@ -1,6 +1,7 @@
 #include "interaccion.h"
 #include "init.h"
 #include "avanzar.h"
+#include "objetos.h"
 #include "visualizacion.h"
 #include "medir.h"
 #include <stdio.h>
@@ -17,6 +18,8 @@
 #define DEF_TERMALIZATION 2500
 #define R_C 2.5
 #define TABLE_LENGTH 10000
+#define RESCALING_RELATIVE_ERROR 1.01
+#define INITIAL_TEMPERATURE 4.0
 
 
 int main(int argc, char *argv[]){
@@ -76,39 +79,46 @@ int main(int argc, char *argv[]){
   // Initialize
   L = cbrt(N / 1.0 / rho);
 
-  double* x = (double*)malloc(3 * N * sizeof(double));
-  double* v = (double*)malloc(3 * N * sizeof(double));
-  double* f = (double*)malloc(3 * N * sizeof(double));
+  struct Particles particles;
 
-  double* table_r = (double*)malloc(TABLE_LENGTH * sizeof(double));
-  double* table_r2 = (double*)malloc(TABLE_LENGTH * sizeof(double));
-  double* table_f = (double*)malloc(TABLE_LENGTH * sizeof(double));
-  double* table_v = (double*)malloc(TABLE_LENGTH * sizeof(double));
+  particles.x = (double*)malloc(3 * N * sizeof(double));
+  particles.v = (double*)malloc(3 * N * sizeof(double));
+  particles.f = (double*)malloc(3 * N * sizeof(double));
+  particles.N = N;
 
-  rho = initial_positions(L, x, N);
-  initial_velocities(v, N, T);
+  struct LookUpTable LUT;
 
-  fill_forces_table(table_r, table_r2, table_f, table_v, R_C, TABLE_LENGTH);
-  update_forces(f, x, N, L, R_C, table_f, table_r2, TABLE_LENGTH);
+  LUT.r = (double*)malloc(TABLE_LENGTH * sizeof(double));
+  LUT.r2 = (double*)malloc(TABLE_LENGTH * sizeof(double));
+  LUT.f = (double*)malloc(TABLE_LENGTH * sizeof(double));
+  LUT.v = (double*)malloc(TABLE_LENGTH * sizeof(double));
+  LUT.length = TABLE_LENGTH;
+  LUT.r_c = R_C;
+
+  rho = initial_positions(L, particles);
+  initial_velocities(particles, INITIAL_TEMPERATURE);
+
+  fill_forces_table(LUT);
+  update_forces(particles, L, LUT);
 
   // Termalize
-  for (int i = 0; i < termalization; i++) timestep(x, v, f, N, dt, L, R_C, table_f, table_r2, TABLE_LENGTH);
+  if (termalization) rescaling(T, RESCALING_RELATIVE_ERROR, termalization, particles, dt, L, LUT);
 
   // Evolve
   double time = 0;
   for (int frame = 0; frame < frames; frame++) {
     time = frame * frames_step * dt;
-    // save_lammpstrj(lamppstrj_filename, x, v, N, L, frame);
-    write_log(frame, time, log_filename, rho, N, L, R_C, table_r2, table_v, table_f, TABLE_LENGTH, x, v, f);
-    for (int i = 0; i < frames_step; i++) timestep(x, v, f, N, dt, L, R_C, table_f, table_r2, TABLE_LENGTH);
+    save_lammpstrj(lamppstrj_filename, particles.x, particles.v, N, L, frame);
+    write_log(frame, time, log_filename, rho, L, LUT, particles);
+    for (int i = 0; i < frames_step; i++) timestep(particles, dt, L, LUT);
   }
 
-  free(x);
-  free(v);
-  free(f);
-  free(table_r);
-  free(table_r2);
-  free(table_v);
-  free(table_f);
+  free(particles.x);
+  free(particles.v);
+  free(particles.f);
+  free(LUT.r);
+  free(LUT.r2);
+  free(LUT.v);
+  free(LUT.f);
   return 0;
 }

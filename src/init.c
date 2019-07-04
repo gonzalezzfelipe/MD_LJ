@@ -7,6 +7,7 @@
 #include "init.h"
 #include "medir.h"
 #include "avanzar.h"
+#include "objetos.h"
 
 #define PI 3.141592
 
@@ -67,44 +68,32 @@ int amount_of_particles(double rho, double L) {
 }
 
 
-double initial_positions(double L, double* x, int n) {
+double initial_positions(double L, Particles parts) {
   /* Define initial positions for all particles.
 
   The particles will be set up on a simple qubic arangement.
-
-  Parameters
-  ----------
-  double L:
-    Side of the cubic volume where to place the particles.
-  double* x:
-    Pointer to the vector that has the positions of every particle as:
-      x = [x_0, y_0, z_0, x_1, y_1, z_1, ...]
-          --------------  -------------
-            Particle 0     Particle 1
-  int n:
-    Amount of particles.
   */
   int i, j, k, n_x, particle;
   double step;
 
-  n_x = (int)cbrt(n);
+  n_x = (int)cbrt(parts.N);
   step = L / n_x;
 
   for (i = 0; i < n_x; i++) {
     for (j = 0; j < n_x; j++) {
       for (k = 0; k < n_x; k++) {
         particle = n_x * n_x * i + n_x * j + k;
-        *(x + 3 * particle + 0) = step / 2 + step * i;  // x
-        *(x + 3 * particle + 1) = step / 2 + step * j;  // y
-        *(x + 3 * particle + 2) = step / 2 + step * k;  // z
+        *(parts.x + 3 * particle + 0) = step / 2 + step * i;  // x
+        *(parts.x + 3 * particle + 1) = step / 2 + step * j;  // y
+        *(parts.x + 3 * particle + 2) = step / 2 + step * k;  // z
       }
     }
   }
-  return n / 1.0 / L / L / L;
+  return parts.N / 1.0 / L / L / L;
 }
 
 
-int initial_velocities(double* v, int n, double T) {
+int initial_velocities(Particles parts, double T) {
   /* Fill initial velocities vector.
 
   The velocities are defined following a Maxwell - Boltzmann distribution.
@@ -131,23 +120,17 @@ int initial_velocities(double* v, int n, double T) {
 
   double mean;
 
-  for (i = 0; i < 3 * n; i++) *(v + i) = sample_boltzmann(T);
+  for (i = 0; i < 3 * parts.N; i++) *(parts.v + i) = sample_boltzmann(T);
   for (direction = 0; direction < 3; direction++) {
     mean = 0;
-    for (i = 0; i < n; i++) mean += *(v + 3 * i + direction) / n;
-    for (i = 0; i < n; i++) *(v + 3 * i + direction) -= mean;
+    for (i = 0; i < parts.N; i++) mean += *(parts.v + 3 * i + direction) / parts.N;
+    for (i = 0; i < parts.N; i++) *(parts.v + 3 * i + direction) -= mean;
   }
   return 0;
 }
 
 
-int fill_forces_table(
-    double *table_r,
-    double *table_r2,
-    double *table_f,
-    double *table_v,
-    double r_c,
-    int length) {
+int fill_forces_table(LookUpTable LUT) {
   /* Create table including r, r squared, F and V.
 
   The idea is to have a table, indexed by r squared as not to have to
@@ -159,52 +142,43 @@ int fill_forces_table(
     * Fy = y * table_f,
     * Fz = z * table_f
   */
- double step = r_c * r_c / length;
+ double step = LUT.r_c * LUT.r_c / LUT.length;
  double current = 0.0;
  double current6;
 
- double v_c = 4.0 / pow(r_c, 12) - 4.0 / pow(r_c, 6);
+ double v_c = 4.0 / pow(LUT.r_c, 12) - 4.0 / pow(LUT.r_c, 6);
 
- for (int i = 1; i < length; i++) {
+ for (int i = 1; i < LUT.length; i++) {
    current += step;
 
-   *(table_r + i) = sqrt(current);
-   *(table_r2 + i) = current;
+   *(LUT.r + i) = sqrt(current);
+   *(LUT.r2 + i) = current;
 
    current6 = current * current * current;
-   *(table_f + i) = 48.0 / current6 / current6 / current - 24.0 / current6 / current;
-   *(table_v + i) = 4.0 / current6 / current6 - 4.0 / current6 - v_c;
+   *(LUT.f + i) = 48.0 / current6 / current6 / current - 24.0 / current6 / current;
+   *(LUT.v + i) = 4.0 / current6 / current6 - 4.0 / current6 - v_c;
  }
  return 0;
 }
 
-int rescaling(
-    double T,
-    double relative_error,
-    int termalization,
-    double* x,
-    double* v,
-    double* f,
-    int N,
-    double dt,
-    double L,
-    double r_c,
-    double *table_f,
-    double *table_r2,
-    int length) {
+
+int rescaling(double T, double relative_error, int termalization, Particles parts, double dt, double L, LookUpTable LUT) {
   /* Apply reescaling until desired temperature is achieved. */
   int i;
   float coeff;
-  double actual = temperature(v, N);
-  double error = fabs(actual - T) / T;
+  double actual = temperature(parts);
+  double error = 10;
+  int times = 0;
 
-  while (error > relative_error) {
-    for (i = 0; i < termalization; i++) timestep(x, v, f, N, dt, L, r_c, table_f, table_r2, length);
-    actual = temperature(v, N);
-    coeff = sqrt(T / actual);
-    for (i = 0; i < 3 * N; i++) *(v + i) = coeff * *(v + i);
+  while (times < 3) {
+    for (i = 0; i < termalization; i++) timestep(parts, dt, L, LUT);
+    actual = temperature(parts);
+    error = fabs(actual - T) / T;
     printf("Desired Temperature: %f\n", T);
     printf("Actual Temperature: %f\n", actual);
+    coeff = sqrt(T / actual);
+    for (i = 0; i < 3 * parts.N; i++) *(parts.v + i) = coeff * *(parts.v + i);
+    if (error < relative_error) times++;
   }
   return 0;
 }

@@ -6,9 +6,10 @@
 #include <math.h>
 #include "avanzar.h"
 #include "interaccion.h"
+#include "objetos.h"
 
 
-int update_postitions(double* x, double* v, double* f, int N, double dt, double L) {
+int update_postitions(Particles parts, double dt, double L) {
   /* Calculate new positions for the particles.
 
   Uses Verlet Algorithm:
@@ -16,44 +17,17 @@ int update_postitions(double* x, double* v, double* f, int N, double dt, double 
     *) x(t + dt) = x(t) + v(t) * dt + 1 / 2 * f / m * dt ** 2
 
   Assumes m = 1.
-
-  Parameters
-  ----------
-  double* x:
-    Pointer to the vector that has the positions of every particle as:
-
-      x = [x_0, y_0, z_0, x_1, y_1, z_1, ...]
-          --------------  -------------
-            Particle 0     Particle 1
-  double* v:
-    Pointer to the vector that has the velocities of every particle as:
-
-      v = [v_x_0, v_y_0, v_z_0, v_x_1, v_y_1, v_z_1, ...]
-          --------------------  -------------------
-                Particle 0          Particle 1
-  double* f:
-    Pointer to the vector that has the forces of every particle as:
-
-      f = [f_x_0, f_y_0, f_z_0, f_x_1, f_y_1, f_z_1, ...]
-          --------------------  -------------------
-                Particle 0          Particle 1
-  int N:
-    Amount of particles. The length of the other vectors should be 3 * n
-  double dt:
-    Temporal step.
-  double L
-    Size of the box.
   */
-  for (int i = 0; i < 3 * N; i++) {
-    *(x + i) += *(v + i) * dt + *(f + i) * dt * dt / 2;
-    if (*(x + i) < 0) *(x + i) += L;
-    else if (*(x + i) > L) *(x + i) -= L;
+  for (int i = 0; i < 3 * parts.N; i++) {
+    parts.x[i] += parts.v[i] * dt + parts.f[i] * dt * dt / 2;
+    if (parts.x[i] < 0) parts.x[i] += L;
+    else if (parts.x[i] > L) parts.x[i] -= L;
   }
   return 0;
 }
 
 
-int update_velocities(double* v, double* f, int N, double dt) {
+int update_velocities(Particles parts, double dt) {
   /* Calculate intermediate step for new velocities for the particles.
 
   Uses Verlet Algorithm:
@@ -64,38 +38,13 @@ int update_velocities(double* v, double* f, int N, double dt) {
   both times dont have to be known simultaneously.
 
   Assumes m = 1.
-
-  Parameters
-  ----------
-  double* x:
-    Pointer to the vector that has the positions of every particle as:
-
-      x = [x_0, y_0, z_0, x_1, y_1, z_1, ...]
-          --------------  -------------
-            Particle 0     Particle 1
-  double* v:
-    Pointer to the vector that has the velocities of every particle as:
-
-      v = [v_x_0, v_y_0, v_z_0, v_x_1, v_y_1, v_z_1, ...]
-          --------------------  -------------------
-                Particle 0          Particle 1
-  double* f:
-    Pointer to the vector that has the forces of every particle as:
-
-      f = [f_x_0, f_y_0, f_z_0, f_x_1, f_y_1, f_z_1, ...]
-          --------------------  -------------------
-                Particle 0          Particle 1
-  int N:
-    Amount of particles. The length of the other vectors should be 3 * n
-  double dt:
-    Temporal step.
   */
-  for (int i = 0; i < 3 * N; i++) *(v + i) = *(v + i) + *(f + i) * 0.5 * dt;
+  for (int i = 0; i < 3 * parts.N; i++) parts.v[i] += parts.f[i] * 0.5 * dt;
   return 0;
 }
 
 
-int timestep(double* x, double* v, double* f, int N, double dt, double L, double r_c, double *table_f, double *table_r2, int length) {
+int timestep(Particles parts, double dt, double L, LookUpTable LUT) {
   /* Make a step in time.
 
   This includes updating positions, velocities and forces using the
@@ -115,10 +64,10 @@ int timestep(double* x, double* v, double* f, int N, double dt, double L, double
 
   This way there's no need to know the forces at both times simultaneously.
   */
-  update_postitions(x, v, f, N, dt, L);
-  update_velocities(v, f, N, dt);
-  update_forces(f, x, N, L, r_c, table_f, table_r2, length);
-  update_velocities(v, f, N, dt);
+  update_postitions(parts, dt, L);
+  update_velocities(parts, dt);
+  update_forces(parts, L, LUT);
+  update_velocities(parts, dt);
   return 0;
 }
 
