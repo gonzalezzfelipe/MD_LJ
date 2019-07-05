@@ -74,32 +74,16 @@ int main(int argc, char *argv[]){
   if (argc >= 11) sscanf(argv[10], "%d", &*seed);
   else *seed = rand();
 
-  int L;
+  double L;
 
   // Initialize
   L = cbrt(N / 1.0 / rho);
 
+  struct LookUpTable LUT;
   struct Particles particles;
 
-  particles.x = (double*)malloc(3 * N * sizeof(double));
-  particles.v = (double*)malloc(3 * N * sizeof(double));
-  particles.f = (double*)malloc(3 * N * sizeof(double));
-  particles.N = N;
-
-  struct LookUpTable LUT;
-
-  LUT.r = (double*)malloc(TABLE_LENGTH * sizeof(double));
-  LUT.r2 = (double*)malloc(TABLE_LENGTH * sizeof(double));
-  LUT.f = (double*)malloc(TABLE_LENGTH * sizeof(double));
-  LUT.v = (double*)malloc(TABLE_LENGTH * sizeof(double));
-  LUT.length = TABLE_LENGTH;
-  LUT.r_c = R_C;
-
-  rho = initial_positions(L, particles);
-  initial_velocities(particles, INITIAL_TEMPERATURE);
-
-  fill_forces_table(LUT);
-  update_forces(particles, L, LUT);
+  init_lut(LUT, r_c, length);  // LUT should be initialized before the particles
+  init_particles(particles, N, initial_t, L, LUT);
 
   // Termalize
   if (termalization) rescaling(T, RESCALING_RELATIVE_ERROR, termalization, particles, dt, L, LUT);

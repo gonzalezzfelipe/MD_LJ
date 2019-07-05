@@ -130,38 +130,6 @@ int initial_velocities(Particles parts, double T) {
 }
 
 
-int fill_forces_table(LookUpTable LUT) {
-  /* Create table including r, r squared, F and V.
-
-  The idea is to have a table, indexed by r squared as not to have to
-  calculate the force at each step, and replace it with a lookup at this
-  table plus an interpolation.
-
-  NOTE: Indexed forces correspond to F / r, as to be able to do:
-    * Fx = x * table_f,
-    * Fy = y * table_f,
-    * Fz = z * table_f
-  */
- double step = LUT.r_c * LUT.r_c / LUT.length;
- double current = 0.0;
- double current6;
-
- double v_c = 4.0 / pow(LUT.r_c, 12) - 4.0 / pow(LUT.r_c, 6);
-
- for (int i = 1; i < LUT.length; i++) {
-   current += step;
-
-   *(LUT.r + i) = sqrt(current);
-   *(LUT.r2 + i) = current;
-
-   current6 = current * current * current;
-   *(LUT.f + i) = 48.0 / current6 / current6 / current - 24.0 / current6 / current;
-   *(LUT.v + i) = 4.0 / current6 / current6 - 4.0 / current6 - v_c;
- }
- return 0;
-}
-
-
 int rescaling(double T, double relative_error, int termalization, Particles parts, double dt, double L, LookUpTable LUT) {
   /* Apply reescaling until desired temperature is achieved. */
   int i;
@@ -180,6 +148,54 @@ int rescaling(double T, double relative_error, int termalization, Particles part
     for (i = 0; i < 3 * parts.N; i++) *(parts.v + i) = coeff * *(parts.v + i);
     if (error < relative_error) times++;
   }
+  return 0;
+}
+
+
+int init_lut(LookUpTable LUT, float r_c, int length) {
+  /* Create table including r, r squared, F and V.
+
+  The idea is to have a table, indexed by r squared as not to have to
+  calculate the force at each step, and replace it with a lookup at this
+  table plus an interpolation.
+
+  NOTE: Indexed forces correspond to F / r, as to be able to do:
+    * Fx = x * table_f,
+    * Fy = y * table_f,
+    * Fz = z * table_f
+  */
+ double step = r_c * r_c / length;
+ double current = 0.0;
+ double current6;
+
+ LUT.r_c = r_c;
+ LUT.length = length;
+
+ double v_c = 4.0 / pow(LUT.r_c, 12) - 4.0 / pow(LUT.r_c, 6);
+
+ for (int i = 1; i < LUT.length; i++) {
+   current += step;
+
+   *(LUT.r + i) = sqrt(current);
+   *(LUT.r2 + i) = current;
+
+   current6 = current * current * current;
+   *(LUT.f + i) = 48.0 / current6 / current6 / current - 24.0 / current6 / current;
+   *(LUT.v + i) = 4.0 / current6 / current6 - 4.0 / current6 - v_c;
+ }
+ return 0;
+}
+
+
+int init_particles(Particles particles, int N, float initial_t, float L, LookUpTable LUT) {
+  particles.x = (double*)malloc(3 * N * sizeof(double));
+  particles.v = (double*)malloc(3 * N * sizeof(double));
+  particles.f = (double*)malloc(3 * N * sizeof(double));
+  particles.N = N;
+
+  initial_positions(L, particles);
+  initial_velocities(particles, INITIAL_TEMPERATURE);
+  update_forces(particles, L, LUT);
   return 0;
 }
 
