@@ -3,7 +3,9 @@
 #include "avanzar.h"
 #include "objetos.h"
 #include "visualizacion.h"
+#include "argumentos.h"
 #include "medir.h"
+#include <argp.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -16,85 +18,115 @@
 #define DEF_LAMMPSTRJ_FILENAME "data/test.lammpstrj"
 #define DEF_LOG_FILENAME "data/test.log"
 #define DEF_TERMALIZATION 2500
-#define R_C 2.5
-#define TABLE_LENGTH 10000
-#define RESCALING_RELATIVE_ERROR 1.01
-#define INITIAL_TEMPERATURE 4.0
+#define DEF_R_C 2.5
+#define DEF_TABLE_LENGTH 10000
+#define DEF_RESCALING_RELATIVE_ERROR 1.01
+#define DEF_INITIAL_TEMPERATURE 4.0
 
 
 int main(int argc, char *argv[]){
-  /* Run MD simulation.
+  // Positional Arguments
+  int N;
+  double rho;
+  double T;
 
-  Parameters
-  ----------
-  double N:
-    Amount of particles.
-  double rho:
-    Desired density.
-  double T:
-    Desired temperature.
-  double dt, optional, default 0.001:
-    Temporal step.
-  int frames, optional, default 100:
-    Amount of frames to save on lammpstrj file.
-  int frames_step, optional, default 1:
-    Amount of frames to leave between saved frames.
-  int termalization, optional, default 2500:
-    Amount of timesteps for termalization.
-  char lamppstrj_filename, optional, default: data/test.lammpstrj
-    Filename where to write results.
-  char log_filename, optional, default: data/test.lammpstrj
-    Filename where to write results.
-  int seed, optional
-    Seed to feed random number generator. Default is current timestamp.
-  */
-  int frames, frames_step, N, termalization;
-  int* seed;
-  double T, rho, dt;
-  char lamppstrj_filename[255];
-  char log_filename[255];
+  struct arguments arguments;
 
-  seed = (int*)malloc(sizeof(int));
+  // Default options
+  arguments.dt = DEF_DT;
+  arguments.frames = DEF_FRAMES;
+  arguments.frames_step = DEF_FRAMES_STEP;
+  arguments.termalization = DEF_TERMALIZATION;
+  strcpy(arguments.lamppstrj_filename, DEF_LAMMPSTRJ_FILENAME);
+  strcpy(arguments.log_filename, DEF_LOG_FILENAME);
+  arguments.seed = time(NULL);
+  arguments.r_c = DEF_R_C;
+  arguments.table_length = DEF_TABLE_LENGTH;
+  arguments.rescaling_relative_error = DEF_RESCALING_RELATIVE_ERROR;
+  arguments.initial_temperature = DEF_INITIAL_TEMPERATURE;
+  arguments.verbose = 0;
 
-  sscanf(argv[1], "%d", &N);
-  sscanf(argv[2], "%lf", &rho);
-  sscanf(argv[3], "%lf", &T);
-  if (argc >= 5) sscanf(argv[4], "%lf", &dt);
-  else dt = 0.001;
-  if (argc >= 6) sscanf(argv[5], "%d", &frames);
-  else frames = DEF_FRAMES;
-  if (argc >= 7) sscanf(argv[6], "%d", &frames_step);
-  else frames_step = DEF_FRAMES_STEP;
-  if (argc >= 8) sscanf(argv[7], "%d", &termalization);
-  else termalization = DEF_TERMALIZATION;
-  if (argc >= 9) strcpy(lamppstrj_filename, argv[8]);
-  else strcpy(lamppstrj_filename, DEF_LAMMPSTRJ_FILENAME);
-  if (argc >= 10) strcpy(log_filename, argv[9]);
-  else strcpy(log_filename, DEF_LOG_FILENAME);
-  if (argc >= 11) sscanf(argv[10], "%d", &*seed);
-  else *seed = rand();
+  // Parse the arguments
+  argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
-  double L;
+  // Parse de positional arguments.
+  sscanf(arguments.args[0], "%d", &N);
+  sscanf(arguments.args[1], "%lf", &rho);
+  sscanf(arguments.args[2], "%lf", &T);
+
+  // Parameters
+  if (arguments.verbose) {
+    printf("Parameters\n");
+    printf("==========\n");
+    printf("Amount of particles: %d\n", N);
+    printf("Density: %lf\n", rho);
+    printf("Temperature: %lf\n", T);
+    printf("Temporal step: %lf\n", arguments.dt);
+    printf("Amount of measurements: %d\n", arguments.frames);
+    printf("Amount of temporal steps between measurements: %d\n", arguments.frames_step);
+    printf("Name of LAMPPSTRJ file: %s\n", arguments.lamppstrj_filename);
+    printf("Name of log file: %s\n", arguments.log_filename);
+    printf("Cut radius: %lf\n", arguments.r_c);
+    printf("LUT table length: %d\n", arguments.table_length);
+    printf("Rescaling relative error: %lf\n", arguments.rescaling_relative_error);
+    printf("Initial temperature for rescaling: %lf\n", arguments.initial_temperature);
+    printf("Random seed: %d\n", arguments.seed);
+  }
+
+  // Set random seed.
+  srand(arguments.seed);
 
   // Initialize
+  double L;
   L = cbrt(N / 1.0 / rho);
 
   struct LookUpTable LUT;
   struct Particles particles;
 
-  init_lut(LUT, r_c, length);  // LUT should be initialized before the particles
-  init_particles(particles, N, initial_t, L, LUT);
+  LUT.r = (double*)malloc(arguments.table_length * sizeof(double));
+  LUT.r2 = (double*)malloc(arguments.table_length * sizeof(double));
+  LUT.f = (double*)malloc(arguments.table_length * sizeof(double));
+  LUT.v = (double*)malloc(arguments.table_length * sizeof(double));
+  LUT.r_c = arguments.r_c;
+  LUT.length = arguments.table_length;
+
+  fill_lut(LUT, arguments.r_c, arguments.table_length);
+
+  particles.x = (double*)malloc(3 * N * sizeof(double));
+  particles.v = (double*)malloc(3 * N * sizeof(double));
+  particles.f = (double*)malloc(3 * N * sizeof(double));
+  particles.N = N;
+
+  initial_positions(L, particles);
 
   // Termalize
-  if (termalization) rescaling(T, RESCALING_RELATIVE_ERROR, termalization, particles, dt, L, LUT);
+  if (arguments.termalization) {
+    initial_velocities(particles, arguments.initial_temperature);
+    rescaling(
+      T, arguments.rescaling_relative_error, arguments.termalization, particles,
+      arguments.dt, L, LUT, arguments.verbose);
+  } else {
+    if (arguments.verbose) printf("No termalization, initial temperature will be the desired.\n");
+    initial_velocities(particles, T);
+  }
+
+  update_forces(particles, L, LUT);
 
   // Evolve
   double time = 0;
-  for (int frame = 0; frame < frames; frame++) {
-    time = frame * frames_step * dt;
-    save_lammpstrj(lamppstrj_filename, particles.x, particles.v, N, L, frame);
-    write_log(frame, time, log_filename, rho, L, LUT, particles);
-    for (int i = 0; i < frames_step; i++) timestep(particles, dt, L, LUT);
+  if (arguments.verbose) {
+    printf("\n");
+    printf("Beggining loop\n");
+    printf("==============\n");
+  }
+  for (int frame = 0; frame < arguments.frames; frame++) {
+    time = frame * arguments.frames_step * arguments.dt;
+    if (arguments.verbose) printf(
+      "\rAmount of frames covered: %d / %d (%.2lf%%)",
+      frame, arguments.frames, 100 * (float)frame / arguments.frames);
+    save_lammpstrj(arguments.lamppstrj_filename, particles.x, particles.v, N, L, frame);
+    write_log(frame, time, arguments.log_filename, rho, L, LUT, particles);
+    for (int i = 0; i < arguments.frames_step; i++) timestep(particles, arguments.dt, L, LUT);
   }
 
   free(particles.x);

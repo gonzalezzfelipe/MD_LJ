@@ -1,6 +1,6 @@
 #include "interaccion.h"
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> 
 
 
 int update_postitions(Particles parts, double dt, double L);

@@ -30,10 +30,10 @@ executable: $(EXECUTABLE)
 all: objects executable
 
 bin/%: src/%.c
-	$(CC) $(CFLAGS) -c $^ -o $@ -lm
+	$(CC) $(CFLAGS) -c $^ -o $@ -lm -largp
 
 %.e: $(OBJECTS_C)
-	$(LD) $^ -o $@ -lm
+	$(LD) $^ -o $@ -lm -largp
 
 clean:
 	rm -rfv $(OBJECTS_C) $(EXECUTABLE1)

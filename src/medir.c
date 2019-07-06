@@ -81,8 +81,8 @@ double potential_energy(Particles parts, LookUpTable LUT, double L) {
       particle_i = 3 * i;
       particle_j = 3 * j;
       r2 = r_squared(parts.x + particle_i, parts.x + particle_j, L);
-      potential += get_v_from_table(r2, LUT);
-      // potential += get_v_from_r2(r2, r_c);
+      // potential += get_v_from_table(r2, LUT);
+      potential += get_v_from_r2(r2, LUT.r_c);
     }
   }
   return potential / parts.N;
