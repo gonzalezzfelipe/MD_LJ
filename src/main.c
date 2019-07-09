@@ -5,14 +5,14 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "aphrodite.h"
-#include "arguments.h"
-#include "chronos.h"
-#include "force.h"
-#include "helpers.h"
-#include "init.h"
-#include "metrics.h"
-#include "objects.h"
+#include "aphrodite.h"  // Visualization
+#include "arguments.h"  // Argument parsing
+#include "chronos.h"    // Temporal evolution
+#include "force.h"      // Forces interaction
+#include "helpers.h"    // Helpers for improved experience
+#include "init.h"       // Initialization of everything
+#include "metrics.h"    // Important metrics calculation
+#include "objects.h"    // Definition of objects used in program
 
 // Default options
 #define DEF_DT 0.001
