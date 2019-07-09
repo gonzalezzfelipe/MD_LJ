@@ -1,6 +1,6 @@
 /* Module for parsing command line arguments. */
-#ifndef ARGUMENTOS_H
-#define ARGUMENTOS_H
+#ifndef ARGUMENTS_H
+#define ARGUMENTS_H
 
 #define AMOUNT_OF_POSITIONAL_ARGS 3
 

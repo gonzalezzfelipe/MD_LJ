@@ -1,5 +1,5 @@
-#ifndef VISUALIZACION_H
-#define VISUALIZACION_H
+#ifndef APHRODITE_H
+#define APHRODITE_H
 
 int save_lammpstrj(char *filename, double* x, double* v, int N, double L, int frame);
 int load_frame(void *fp, double* x, double* v, int N, double *L);

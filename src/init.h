@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "objetos.h"
+#include "objects.h"
 
 #define PI 3.141592
 

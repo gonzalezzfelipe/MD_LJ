@@ -1,12 +1,12 @@
-#ifndef AVANZAR_H
-#define AVANZAR_H
+#ifndef CHRONOS_H
+#define CHRONOS_H
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "avanzar.h"
-#include "interaccion.h"
-#include "objetos.h"
+#include "chronos.h"
+#include "force.h"
+#include "objects.h"
 
 
 int update_postitions(Particles parts, double dt, double L) {

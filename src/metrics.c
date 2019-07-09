@@ -1,12 +1,12 @@
-#ifndef MEDIR_H
-#define MEDIR_H
+#ifndef METRICS_H
+#define METRICS_H
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "medir.h"
-#include "interaccion.h"
-#include "objetos.h"
+#include "metrics.h"
+#include "force.h"
+#include "objects.h"
 
 #define PI 3.141592
 

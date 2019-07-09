@@ -1,18 +1,20 @@
-#include "interaccion.h"
-#include "init.h"
-#include "avanzar.h"
-#include "objetos.h"
-#include "visualizacion.h"
-#include "argumentos.h"
-#include "helpers.h"
-#include "medir.h"
 #include <argp.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
+#include "aphrodite.h"
+#include "arguments.h"
+#include "chronos.h"
+#include "force.h"
+#include "helpers.h"
+#include "init.h"
+#include "metrics.h"
+#include "objects.h"
+
+// Default options
 #define DEF_DT 0.001
 #define DEF_FRAMES 100
 #define DEF_FRAMES_STEP 1
@@ -118,7 +120,7 @@ int main(int argc, char *argv[]){
   if (arguments.verbose) printf("\nBeggining loop\n==============\n");
   for (int frame = 0; frame < arguments.frames; frame++) {
     time = frame * arguments.frames_step * arguments.dt;
-    progress(frame, arguments.frames);
+    if (arguments.verbose) progress(frame, arguments.frames);
     save_lammpstrj(arguments.lammpstrj_filename, particles.x, particles.v, N, L, frame);
     write_log(frame, time, arguments.log_filename, rho, L, LUT, particles);
     for (int i = 0; i < arguments.frames_step; i++)

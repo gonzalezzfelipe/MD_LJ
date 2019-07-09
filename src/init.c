@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include "init.h"
-#include "medir.h"
-#include "avanzar.h"
-#include "objetos.h"
+#include "metrics.h"
+#include "chronos.h"
+#include "objects.h"
 
 #define PI 3.141592
 

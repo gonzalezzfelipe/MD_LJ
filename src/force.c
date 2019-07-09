@@ -1,11 +1,11 @@
-#ifndef INTERACCION_H
-#define INTERACCION_H
+#ifndef FORCE_H
+#define FORCE_H
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "interaccion.h"
-#include "objetos.h"
+#include "force.h"
+#include "objects.h"
 
 
 double min_diff(double x, double y, double L) {

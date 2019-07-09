@@ -1,4 +1,4 @@
-#include "interaccion.h"
+#include "force.h"
 #include <stdio.h>
 #include <stdlib.h>
 

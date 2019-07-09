@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "objetos.h"
+#include "objects.h"
 
 
 // Termalizacion
