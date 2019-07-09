@@ -44,7 +44,7 @@ int update_velocities(Particles parts, double dt) {
 }
 
 
-int timestep(Particles parts, double dt, double L, LookUpTable LUT) {
+int timestep(Particles parts, double dt, double L, LookUpTable LUT, int exact) {
   /* Make a step in time.
 
   This includes updating positions, velocities and forces using the
@@ -66,7 +66,7 @@ int timestep(Particles parts, double dt, double L, LookUpTable LUT) {
   */
   update_postitions(parts, dt, L);
   update_velocities(parts, dt);
-  update_forces(parts, L, LUT);
+  update_forces(parts, L, LUT, exact);
   update_velocities(parts, dt);
   return 0;
 }

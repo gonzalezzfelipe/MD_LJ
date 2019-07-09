@@ -130,7 +130,9 @@ int initial_velocities(Particles parts, double T) {
 }
 
 
-int rescaling(double T, double relative_error, int termalization, Particles parts, double dt, double L, LookUpTable LUT, int verbose) {
+int rescaling(
+    double T, double relative_error, int termalization, Particles parts,
+    double dt, double L, LookUpTable LUT, int verbose, int exact) {
   /* Apply reescaling until desired temperature is achieved. */
   int i;
   float coeff;
@@ -138,20 +140,13 @@ int rescaling(double T, double relative_error, int termalization, Particles part
   double error = 10;
   int times = 0;
 
-  if (verbose) {
-    printf("\n");
-    printf("Rescaling\n");
-    printf("=========\n");
-  }
+  if (verbose) printf("\nRescaling\n=========\n");
 
   while (times < 3) {
-    for (i = 0; i < termalization; i++) timestep(parts, dt, L, LUT);
+    for (i = 0; i < termalization; i++) timestep(parts, dt, L, LUT, exact);
     actual = temperature(parts);
     error = fabs(actual - T) / T;
-    if (verbose) {
-      printf("Desired Temperature: %f\n", T);
-      printf("Actual Temperature: %f\n", actual);
-    }
+    if (verbose) printf("Desired Temperature: %f\nActual Temperature: %f\n", T, actual);
     coeff = sqrt(T / actual);
     for (i = 0; i < 3 * parts.N; i++) *(parts.v + i) = coeff * *(parts.v + i);
     if (error < relative_error) times++;
@@ -160,7 +155,7 @@ int rescaling(double T, double relative_error, int termalization, Particles part
 }
 
 
-int fill_lut(LookUpTable LUT, float r_c, int length) {
+int fill_lut(LookUpTable *LUT, float r_c, int length) {
   /* Create table including r, r squared, F and V.
 
   The idea is to have a table, indexed by r squared as not to have to
@@ -176,19 +171,20 @@ int fill_lut(LookUpTable LUT, float r_c, int length) {
  double current = 0.0;
  double current6;
 
- double v_c = 4.0 / pow(LUT.r_c, 12) - 4.0 / pow(LUT.r_c, 6);
+ double v_c = 4.0 / pow(LUT->r_c, 12) - 4.0 / pow(LUT->r_c, 6);
 
- for (int i = 1; i < LUT.length; i++) {
+ for (int i = 1; i < LUT->length; i++) {
    current += step;
 
-   *(LUT.r + i) = sqrt(current);
-   *(LUT.r2 + i) = current;
+   LUT->r[i] = sqrt(current);
+   LUT->r2[i] = current;
 
    current6 = current * current * current;
-   *(LUT.f + i) = 48.0 / current6 / current6 / current - 24.0 / current6 / current;
-   *(LUT.v + i) = 4.0 / current6 / current6 - 4.0 / current6 - v_c;
+   LUT->f[i] = 48.0 / current6 / current6 / current - 24.0 / current6 / current;
+   LUT->v[i] = 4.0 / current6 / current6 - 4.0 / current6 - v_c;
  }
  return 0;
 }
+
 
 #endif

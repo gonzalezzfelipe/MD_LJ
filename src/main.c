@@ -4,6 +4,7 @@
 #include "objetos.h"
 #include "visualizacion.h"
 #include "argumentos.h"
+#include "helpers.h"
 #include "medir.h"
 #include <argp.h>
 #include <stdio.h>
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]){
   arguments.frames = DEF_FRAMES;
   arguments.frames_step = DEF_FRAMES_STEP;
   arguments.termalization = DEF_TERMALIZATION;
-  strcpy(arguments.lamppstrj_filename, DEF_LAMMPSTRJ_FILENAME);
+  strcpy(arguments.lammpstrj_filename, DEF_LAMMPSTRJ_FILENAME);
   strcpy(arguments.log_filename, DEF_LOG_FILENAME);
   arguments.seed = time(NULL);
   arguments.r_c = DEF_R_C;
@@ -45,6 +46,7 @@ int main(int argc, char *argv[]){
   arguments.rescaling_relative_error = DEF_RESCALING_RELATIVE_ERROR;
   arguments.initial_temperature = DEF_INITIAL_TEMPERATURE;
   arguments.verbose = 0;
+  arguments.exact = 0;
 
   // Parse the arguments
   argp_parse(&argp, argc, argv, 0, 0, &arguments);
@@ -64,7 +66,7 @@ int main(int argc, char *argv[]){
     printf("Temporal step: %lf\n", arguments.dt);
     printf("Amount of measurements: %d\n", arguments.frames);
     printf("Amount of temporal steps between measurements: %d\n", arguments.frames_step);
-    printf("Name of LAMPPSTRJ file: %s\n", arguments.lamppstrj_filename);
+    printf("Name of LAMPPSTRJ file: %s\n", arguments.lammpstrj_filename);
     printf("Name of log file: %s\n", arguments.log_filename);
     printf("Cut radius: %lf\n", arguments.r_c);
     printf("LUT table length: %d\n", arguments.table_length);
@@ -90,7 +92,7 @@ int main(int argc, char *argv[]){
   LUT.r_c = arguments.r_c;
   LUT.length = arguments.table_length;
 
-  fill_lut(LUT, arguments.r_c, arguments.table_length);
+  if (!(arguments.exact)) fill_lut(&LUT, arguments.r_c, arguments.table_length);
 
   particles.x = (double*)malloc(3 * N * sizeof(double));
   particles.v = (double*)malloc(3 * N * sizeof(double));
@@ -98,36 +100,31 @@ int main(int argc, char *argv[]){
   particles.N = N;
 
   initial_positions(L, particles);
+  update_forces(particles, L, LUT, arguments.exact);
 
   // Termalize
   if (arguments.termalization) {
     initial_velocities(particles, arguments.initial_temperature);
     rescaling(
       T, arguments.rescaling_relative_error, arguments.termalization, particles,
-      arguments.dt, L, LUT, arguments.verbose);
+      arguments.dt, L, LUT, arguments.verbose, arguments.exact);
   } else {
     if (arguments.verbose) printf("No termalization, initial temperature will be the desired.\n");
     initial_velocities(particles, T);
   }
 
-  update_forces(particles, L, LUT);
-
   // Evolve
   double time = 0;
-  if (arguments.verbose) {
-    printf("\n");
-    printf("Beggining loop\n");
-    printf("==============\n");
-  }
+  if (arguments.verbose) printf("\nBeggining loop\n==============\n");
   for (int frame = 0; frame < arguments.frames; frame++) {
     time = frame * arguments.frames_step * arguments.dt;
-    if (arguments.verbose) printf(
-      "\rAmount of frames covered: %d / %d (%.2lf%%)",
-      frame, arguments.frames, 100 * (float)frame / arguments.frames);
-    save_lammpstrj(arguments.lamppstrj_filename, particles.x, particles.v, N, L, frame);
+    progress(frame, arguments.frames);
+    save_lammpstrj(arguments.lammpstrj_filename, particles.x, particles.v, N, L, frame);
     write_log(frame, time, arguments.log_filename, rho, L, LUT, particles);
-    for (int i = 0; i < arguments.frames_step; i++) timestep(particles, arguments.dt, L, LUT);
+    for (int i = 0; i < arguments.frames_step; i++)
+      timestep(particles, arguments.dt, L, LUT, arguments.exact);
   }
+  progress(arguments.frames, arguments.frames);
 
   free(particles.x);
   free(particles.v);

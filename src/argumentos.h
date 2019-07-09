@@ -25,7 +25,7 @@ static struct argp_option options[] = {
   {"frames", 'f', "FRAMES", 0, "Amount of frames to save on output files."},
   {"frames_step", 's', "FRAMES_STEP", 0, "Amount of frames to leave between saved frames."},
   {"termalization", 't', "TERMALIZATION", 0, "Amount of timesteps for termalization and rescaling."},
-  {"lamppstrj_filename", 'o', "LAMMPSTRJ_FILENAME", 0, "Filename where to write LAMMPS trajectories."},
+  {"lammpstrj_filename", 'o', "LAMMPSTRJ_FILENAME", 0, "Filename where to write LAMMPS trajectories."},
   {"log_filename", 'l', "LOG_FILENAME", 0, "Filename where to log relevant metrics."},
   {"seed", 'r', "SEED", 0, "Random seed."},
   {"r_c", 'c', "CUT_RADIUS", 0, "Radius for which interaction becomes 0."},
@@ -33,6 +33,7 @@ static struct argp_option options[] = {
   {"rescaling_relative_error", 'w', "RESCALING_RELATIVE_ERROR", 0, "Relative error for temperature rescaling."},
   {"initial_temperature", 'i', "INITIAL_TEMPERATURE", 0, "Initial temperature before rescaling."},
   {"verbose", 'v', 0, 0, "Whether to be verbose on the output."},
+  {"exact", 'e', 0, 0, "If defined, table will not be used and the forces and potentials will be calculated."},
   { 0 }
 };
 
@@ -50,12 +51,13 @@ struct arguments {
   int frames;
   int frames_step;
   int termalization;
-  char lamppstrj_filename[255];
+  char lammpstrj_filename[255];
   char log_filename[255];
   int seed;
 
   // Flags
   int verbose;
+  int exact;
 };
 
 
@@ -82,7 +84,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       sscanf(arg, "%d", &arguments->termalization);
       break;
     case 'o':
-      strcpy(arguments->lamppstrj_filename, arg);
+      strcpy(arguments->lammpstrj_filename, arg);
       break;
     case 'l':
       strcpy(arguments->log_filename, arg);
@@ -104,6 +106,9 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       break;
     case 'v':
       arguments->verbose = 1;
+      break;
+    case 'e':
+      arguments->exact = 1;
       break;
 
     // This below is general to any program.

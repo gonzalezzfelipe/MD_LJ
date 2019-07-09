@@ -69,7 +69,7 @@ double get_force_from_r2(double r2, double r_c) {
 
 
 
-int update_forces(Particles parts, double L, LookUpTable LUT) {
+int update_forces(Particles parts, double L, LookUpTable LUT, int exact) {
   /* Update forces vector using table. */
   double distance, r2;
   double force;
@@ -82,8 +82,8 @@ int update_forces(Particles parts, double L, LookUpTable LUT) {
     for (j = i + 1; j < parts.N; j++) {
       r2 = r_squared(parts.x + 3 * i, parts.x + 3 * j, L);
       if (r2 < LUT.r_c * LUT.r_c) {
-        // force = get_force_from_table(r2, LUT);
-        force = get_force_from_r2(r2, LUT.r_c);
+        if (exact) force = get_force_from_r2(r2, LUT.r_c);
+        else force = get_force_from_table(r2, LUT);
         for (dir = 0; dir < 3; dir++) {
           distance = min_diff(parts.x[3 * i + dir], parts.x[3 * j + dir], L);
           parts.f[3 * i + dir] += force * distance;
