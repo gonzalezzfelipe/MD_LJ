@@ -6,7 +6,7 @@
 
 #define _EMPTY '_'
 #define _FULL '#'
-#define _TOTAL 50
+#define _TOTAL 70
 
 
 int progress(int done, int total) {
@@ -18,7 +18,7 @@ int progress(int done, int total) {
     if (i < covered) _progress[i] = _FULL;
     else _progress[i] = _EMPTY;
   }
-  printf("\rProgress: %s (%.2f %%)", _progress, 100 * done / 1.0 / total);
+  printf("\rProgress: |%s| (%.2f %%)", _progress, 100 * done / 1.0 / total);
   fflush(stdout);
   if (done == total) printf("\n");
   return 0;
