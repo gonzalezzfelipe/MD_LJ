@@ -70,7 +70,7 @@ double get_v_from_r2(double r2, double r_c) {
 }
 
 
-double potential_energy(Particles parts, LookUpTable LUT, double L) {
+double potential_energy(Particles parts, LookUpTable LUT, double L, int exact) {
   int particle_i, particle_j;
   double r2, potential;
 
@@ -81,8 +81,8 @@ double potential_energy(Particles parts, LookUpTable LUT, double L) {
       particle_i = 3 * i;
       particle_j = 3 * j;
       r2 = r_squared(parts.x + particle_i, parts.x + particle_j, L);
-      // potential += get_v_from_table(r2, LUT);
-      potential += get_v_from_r2(r2, LUT.r_c);
+      if (exact) potential += get_v_from_r2(r2, LUT.r_c);
+      else potential += get_v_from_table(r2, LUT);
     }
   }
   return potential / parts.N;
@@ -184,13 +184,15 @@ double h_boltzmann(Particles parts) {
 }
 
 
-int write_log(int timestep, double time, char* filename, double rho, double L, LookUpTable LUT, Particles parts) {
+int write_log(
+    int timestep, double time, char* filename, double rho, double L,
+    LookUpTable LUT, Particles parts, int exact) {
   /* Write log line with relevant metrics.*/
   FILE *fp;
 
   double K = kinetic(parts);
   double T = temperature(parts);
-  double V = potential_energy(parts, LUT, L);
+  double V = potential_energy(parts, LUT, L, exact);
   double E = V + K;
   double P = pressure(rho, T, L, LUT, parts);
   double verlet = verlet_coeff(parts, L);

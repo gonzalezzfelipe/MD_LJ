@@ -122,7 +122,8 @@ int main(int argc, char *argv[]){
     time = frame * arguments.frames_step * arguments.dt;
     if (arguments.verbose) progress(frame, arguments.frames);
     save_lammpstrj(arguments.lammpstrj_filename, particles.x, particles.v, N, L, frame);
-    write_log(frame, time, arguments.log_filename, rho, L, LUT, particles);
+    write_log(
+      frame, time, arguments.log_filename, rho, L, LUT, particles, arguments.exact);
     for (int i = 0; i < arguments.frames_step; i++)
       timestep(particles, arguments.dt, L, LUT, arguments.exact);
   }
