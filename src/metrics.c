@@ -201,11 +201,11 @@ int write_log(
   if (timestep) fp = fopen(filename, "a");
   else {
     fp = fopen(filename, "w");
-    fprintf(fp, "timestep,time,V,K,E,T,P,rho,verlet,H\n");
+    fprintf(fp, "timestep,time,L,N,rho,V,K,E,T,P,verlet,H\n");
   };
   fprintf(
-    fp, "%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
-    timestep, time, V, K, E, T, P, rho, verlet, H);
+    fp, "%d,%lf,%lf,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
+    timestep, time, L, parts.N, rho, V, K, E, T, P, verlet, H);
   fclose(fp);
   return 0;
 }

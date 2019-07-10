@@ -117,17 +117,18 @@ int main(int argc, char *argv[]){
 
   // Evolve
   double time = 0;
+  unsigned long start = get_epoch_in_microseconds();
   if (arguments.verbose) printf("\nBeggining loop\n==============\n");
   for (int frame = 0; frame < arguments.frames; frame++) {
     time = frame * arguments.frames_step * arguments.dt;
-    if (arguments.verbose) progress(frame, arguments.frames);
+    if (arguments.verbose) progress(frame, arguments.frames, start);
     save_lammpstrj(arguments.lammpstrj_filename, particles.x, particles.v, N, L, frame);
     write_log(
       frame, time, arguments.log_filename, rho, L, LUT, particles, arguments.exact);
     for (int i = 0; i < arguments.frames_step; i++)
       timestep(particles, arguments.dt, L, LUT, arguments.exact);
   }
-  progress(arguments.frames, arguments.frames);
+  progress(arguments.frames, arguments.frames, start);
 
   free(particles.x);
   free(particles.v);
