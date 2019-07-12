@@ -14,7 +14,7 @@ double potential_energy(
 double temperature(Particles parts);
 double kinetic(Particles parts);
 double pressure(
-  double rho, double T, double L, LookUpTable LUT, Particles parts);
+  double rho, double T, double L, LookUpTable LUT, Particles parts, int exact);
 
 // Escribir
 int write_log(

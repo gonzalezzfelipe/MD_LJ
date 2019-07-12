@@ -97,11 +97,11 @@ double kinetic(Particles parts) {
 
 
 double temperature(Particles parts) {
-  return kinetic(parts) / 3;
+  return 2 * kinetic(parts) / 3;
 }
 
 
-double pressure(double rho, double T, double L, LookUpTable LUT, Particles parts) {
+double pressure(double rho, double T, double L, LookUpTable LUT, Particles parts, int exact) {
   double p, r2, force, distance;
   int amount = 0;
 
@@ -109,7 +109,8 @@ double pressure(double rho, double T, double L, LookUpTable LUT, Particles parts
   for (int i = 0; i < parts.N - 1; i++) {
     for (int j = i + 1; j < parts.N; j++) {
       r2 = r_squared(parts.x + 3 * i, parts.x + 3 * j, L);
-      force = get_force_from_table(r2, LUT);
+      if (exact) force = get_force_from_r2(r2, LUT.r_c);
+      else force = get_force_from_table(r2, LUT);
       for (int dir = 0; dir < 3; dir++) {
         distance = min_diff(*(parts.x + 3 * i + dir), *(parts.x + 3 * j + dir), L);
         p += force * distance * distance;
@@ -194,7 +195,7 @@ int write_log(
   double T = temperature(parts);
   double V = potential_energy(parts, LUT, L, exact);
   double E = V + K;
-  double P = pressure(rho, T, L, LUT, parts);
+  double P = pressure(rho, T, L, LUT, parts, exact);
   double verlet = verlet_coeff(parts, L);
   double H = h_boltzmann(parts);
 

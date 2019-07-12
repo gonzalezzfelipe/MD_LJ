@@ -128,7 +128,7 @@ int main(int argc, char *argv[]){
     for (int i = 0; i < arguments.frames_step; i++)
       timestep(particles, arguments.dt, L, LUT, arguments.exact);
   }
-  progress(arguments.frames, arguments.frames, start);
+  if (arguments.verbose) progress(arguments.frames, arguments.frames, start);
 
   free(particles.x);
   free(particles.v);
