@@ -26,7 +26,23 @@
 \begin{abstract}
 
 Se estudi\'o la evolucion de un sistema NVE bajo un potencial de Lennard Jones,
-de caracter peri\'odico, integrado por el algoritmo de Velocity Verlet.
+de caracter peri\'odico, integrado por el algoritmo de Velocity Verlet. Se hizo
+un exhaustivo an\'alisis sobre la termalizaci\'on del sistema cerca del punto
+triple llegando a la conclusi\'on de son suficientes $\simeq 2$ unidades
+temporales para asegurar termalizaci\'on. Tambi\'en se estudio la validez de la
+ecuaci\'on de estado entre los rangos de par\'ametros de $\rho \in [0.4, 0.8]$
+y $T \in [0.4, 2]$. Para esto, se realizo un ajuste entre la pendiente
+recuperada de la relacion $P(T)$ en funci\'on de la densidad, llegando a una
+pendiente $m$ y ordenada al origen $b$ de
+
+$$
+\left \{
+  \begin{matrix}
+    m = (1.00090 \pm 0.00006) \\
+    b = (-0.00034 \pm 0.00003)
+  \end{matrix}
+\right.
+$$
 
 \end{abstract}
 
@@ -52,12 +68,16 @@ El potencial de Lennard Jones es el potencial can\'onico utilizado para simular
 la interacci\'on entre moleculas, y su forma funcional es la siguiente:
 
 \begin{equation}
-  V(r) = 4 \epsilon \left[
-    \left(
-      \frac{\sigma}{r ^ 12}\right) - \frac{\sigma}{r ^ 6}
-    \right)
-  \right]
+  V(r) = 4 \epsilon \left[ \left( \frac{\sigma}{r ^ {12}}\right) - \left( \frac{\sigma}{r ^ 6} \right) \right]
 \end{equation}
+
+\begin{figure}
+  \begin{center}
+  \includegraphics[scale=0.62]{images/lj_potential.png}
+  \caption{Forma funcional del potencial de Lennard Jones.}
+  \label{lj_potential}
+\end{center}
+\end{figure}
 
 Vemos que el potencial tiene 2 distintas componentes, una repulsiva que va
 como $\propto \frac{1}{r ^ 12}$ y otra atractiva que va como
@@ -67,14 +87,6 @@ modela la atracci\'on electromagn\'etica, cuyo decaimiento de es cuadr\'atico
 sino mayor siendo que los momentos monopolares de las p\'articulas son nulos.
 La forma funcional de este potencial es la que se muestra en la figura
 \ref{lj_potential}.
-
-\begin{figure}
-  \begin{center}
-  \includegraphics[scale=0.62]{/images/lj_potential.png}
-  \caption{Forma funcional del potencial de Lennard Jones.}
-  \label{lj_potential}
-\end{center}
-\end{figure}
 
 Para integrar este potencial es necesario un integrador simpl\'ectico ya que
 estamos bajo la presencia de un sistema f\'isico cuya energ\'ia se conserva.
@@ -94,7 +106,7 @@ de la siguiente manera:
 \begin{equation}
   \left \{
   \begin{matrix}
-    x(t + h) = x(t) + h\.v(t) + \frac{h ^ 2}{2} f(t) //
+    x(t + h) = x(t) + h v(t) + \frac{h ^ 2}{2} f(t) \\
     v(t + h) = v(t) + h \frac{f(t) + f(t + h)}{2},
   \end{matrix}
   \right .
@@ -107,7 +119,7 @@ esto no es asi ya que $f$ no depende de $v$, sino solo de $x$.
 
 Sabemos adem\'as que para poder simular el sistema es necesario darle una
 condici\'on inicial, sin embargo no tenemos ninguna garant\'ia de que la
-condici\'on inicial fijada sea un estado representativo de los para\'ametros
+condici\'on inicial fijada sea un estado representativo de los par\'ametros
 termodinamicos provistos, siendo que a priori uno no sabe si se encuentra en
 equilibrio. Esto indica que es necesario un periodo de termalizaci\'on para que
 el sistema llegue al equilibrio.
@@ -148,14 +160,9 @@ Durante el transcurso del trabajo se utilizaron unidades reducidas.
 
 \subsection{Termalizaci\'on}
 
-Se comenzo por estudiar la termalizaci\'on del sistema, en pos de evitar tomar
-mediciones fuera del equilibrio. Para esto, se utilizaron diversos criterios
-para evitar tomar una decision sesgada. Se comenzo por estudiar la evoluci\'on
-de la energ\'ia en funcion del tiempo.
-
 \begin{figure}
   \begin{center}
-  \includegraphics[scale=0.62]{/images/e_vs_t.png}
+  \includegraphics[scale=0.62]{images/e_vs_t.png}
   \caption{Energia total, potencial y cin\'etica en funci\'on del tiempo para
   un sistema de 512 part\'iculas, cuyos parametros iniciales son
   $\rho = 0.8422$ y $T = 0.728$.}
@@ -163,24 +170,27 @@ de la energ\'ia en funcion del tiempo.
 \end{center}
 \end{figure}
 
+Se comenzo por estudiar la termalizaci\'on del sistema, en pos de evitar tomar
+mediciones fuera del equilibrio. Para esto, se utilizaron diversos criterios
+para evitar tomar una decision sesgada. Se comenzo por estudiar la evoluci\'on
+de la energ\'ia en funcion del tiempo, como lo muestra la figura \ref{e_vs_t}.
+
 Vemos que la energ\'ia total se mantiene estable, lo que era esperable de un
 integrador simpl\'ectico, sin embargo existe una transferencia neta de
 energ\'ia potencial a cin\'etica entre $t \in [0, 0.5]$. Vemos que una vez pasado
 este tiempo siguen existiendo transferencias, pero son simples fluctuaciones
 debido a que se tiene una cantidad finita de particulas. De esta manera, se
-podr\'ia entender que una vez pasado $t = 2.5$ se llega a un estado de
+podr\'ia entender que una vez pasado $t = 0.5$ se llega a un estado de
 equilibrio, representativo del sistema a analizar, cuya temperatura no es igual
 a la que fue seteada al principio de la simulaci\'on.
 
 Otro par\'ametro a seguir para entender la termalizaci\'on del sistema es el
-coeficiente de Verlet.
-
-La evoluci\'on del coeficiente de Verlet en funci\'on del tiempo para el
-sistema propuesto se encuentra en la figura \ref{verlet_vs_t}}.
+coeficiente de Verlet. La evoluci\'on del mismo en funci\'on del tiempo para el
+sistema propuesto se encuentra en la figura \ref{verlet_vs_t}.
 
 \begin{figure}
   \begin{center}
-  \includegraphics[scale=0.62]{/images/verlet_vs_t.png}
+  \includegraphics[scale=0.62]{images/verlet_vs_t.png}
   \caption{Coeficiente de Verlet en funcion del tiempo para un sistema de 512
   part\'iculas, cuyos parametros iniciales son $\rho = 0.8422$ y $T = 0.728$.}
   \label{verlet_vs_t}
@@ -197,7 +207,7 @@ dejarse termalizar al menos hasta llegar a $t = 2$.
 \subsection{Transiciones de Fase}
 
 Una vez entendida la termalizaci\'on del sistema, se analizan las transiciones
-de fase que atraviesa el sistema. Para ello, se realiza un barrido de
+de fase que atraviesa el mismo. Para ello, se realiza un barrido de
 $\rho \in [0.4, 0.8]$ con paso de $0.01$ y $T \in [0.4, 2]$ con paso de $0.1$,
 para un sistema de $125$ part\'culas. Tenemos que en este rango de parametros,
 para distintas combinaciones de los mismos, esperamos que el sistema transicione
@@ -205,25 +215,25 @@ de estado gaseoso a l\'iquido.
 
 La literatura nos dice que deberiamos esperar un gas para $\rho = 0.4$ y $T = 2$,
 mientras que para $\rho = 0.4$ y $T = 0.4$ deberiamos tener un l\'iquido. Para
-chequear esta hipotesis, calcula la funci\'on de distribucion radial $g(r)$
+chequear esta hipotesis se calcula la funci\'on de distribucion radial $g(r)$
 sobre estos puntos, para ver si el comportamiento de estas funciones son las
 esperadas para su estado.
 
-Sobre la figura \label{liquido} tenemos la funci\'on $g(r)$ para $\rho = 0.4$ y
+Sobre la figura \ref{liquido} tenemos la funci\'on $g(r)$ para $\rho = 0.4$ y
 $T = 0.4$, condici\'on sobre la cual esperamos tener un l\'iquido. Vemos que
 la funci\'on tiene oscilaciones sobre esta funci\'on que son las
 caracter\'isticas de un l\'iquido, en la cual se puede ver un poco de
-oscilaciones pero mueren r\'apido. Por el otro lado, en la figura \label{gas}
+oscilaciones pero mueren r\'apido. Por el otro lado, en la figura \ref{gas}
 tenemos $g(r)$ para $\rho = 0.4$ y $T = 2$. En este caso se cumple que la caida
 despues del pico inicial es constante y no existen oscilaciones, lo cual es
-compatible con un gas. Por completitud tenemos en la figura \label{solido} la
+compatible con un gas. Por completitud tenemos en la figura \ref{solido} la
 funci\'on $g(r)$ para $\rho = 1.5$ y $T = 0.4$, en donde la literatura predice
 la fase s\'olida. Vemos que en este caso se tiene muchas mas oscilaciones,
 tipicas del estado s\'olido.
 
 \begin{figure}
   \begin{center}
-  \includegraphics[scale=0.62]{/images/gas.png}
+  \includegraphics[scale=0.62]{images/gas.png}
   \caption{$g(r)$ para $\rho = 0.4$ y $T = 2$. Vemos que la forma funcional
   es la esperada para un gas.}
   \label{gas}
@@ -232,49 +242,94 @@ tipicas del estado s\'olido.
 
 \begin{figure}
   \begin{center}
-  \includegraphics[scale=0.62]{/images/liquido.png}
+  \includegraphics[scale=0.62]{images/liquido.png}
   \caption{$g(r)$ para $\rho = 0.4$ y $T = 0.4$. Vemos que la forma funcional
-  es la esperada para un gas.}
+  es la esperada para un l\'iquido.}
   \label{liquido}
 \end{center}
 \end{figure}
 
 \begin{figure}
   \begin{center}
-  \includegraphics[scale=0.62]{/images/solido.png}
+  \includegraphics[scale=0.62]{images/solido.png}
   \caption{$g(r)$ para $\rho = 1.5$ y $T = 0.4$. Vemos que la forma funcional
-  es la esperada para un gas.}
+  es la esperada para un s\'olido.}
   \label{solido}
 \end{center}
 \end{figure}
 
 De este manera sabemos que entre estos valores debe existir la transici\'on. En
-la figura \label{e_vs_t_rho_0.4} tenemos la energia en funci\'on de la
+la figura \ref{e_vs_t_rho_0_4} tenemos la energia en funci\'on de la
 temperatura para $\rho = 0.4$. Vemos que para las temperaturas mas bajas es
 sistema tiene un comportamiento cualitativamente distinto que para las mas
 altas, en particular se puede decir que para $T \simeq 1.2$ el comportamiento
 se vuelve lineal para las temperaturas mayores, lo cual es razonable para un
 gas debido a que imita el comportamiento de un gas ideal en donde no hay
-interacci\'on, ya que la temperatura comienza a superar el potenciales. No solo
+interacci\'on, ya que la temperatura comienza a superar los potenciales. No solo
 eso, sino que al realizar un ajuste lineal sobre este subconjunto de mediciones
-tenemos que la pendiente es de $(1.76 \pm 0.04)$, la cual es compatible con el
+tenemos que la pendiente es de $(1.76 \pm 0.04)$, la cual es cercano con el
 valor te\'orico del calor espec\'ifico de $\frac{3}{2}$.
 
 \begin{figure}
   \begin{center}
-  \includegraphics[scale=0.62]{/images/e_vs_t_rho_0.4.png}
+  \includegraphics[scale=0.62]{images/e_vs_t_rho_0_4.png}
   \caption{Energia en funci\'on de la temperatura para $\rho = 0.4$, vemos que
   se pueden apreciar 2 regimenes distintos a simple vista, siendo el segundo de
   caracter lineal. Se ajusto una recta para los datos cuya temperatura es
   mayor $1.5$, dando como resultado una pendiente de $(1.76 \pm 0.04)$.}
-  \label{e_vs_t_rho_0.4}
+  \label{e_vs_t_rho_0_4}
 \end{center}
 \end{figure}
 
 Algo interesante ocurre tambi\'en con la presi\'on. Tenemos que para el rango
-estudiado, 
+estudiado, vale la ecuaci\'on de estado del gas ideal. Sabemos que deberia
+valer $PV = NT$ en nuestras unidades, por lo que $P(T) = \rho T$. En la figura
+\label{presion_vs_t} tenemos esta relaci\'on para $\rho = 0.76$. Vemos que se
+cumple que la relacion es lineal, y que lo es con una pendiente de
+$(0.76038 \pm 0.00001)$, cumpliendo la relaci\'on del gas ideal. Esto llevo a la
+idea de realizar este ajuste para todas las curvas de $P(T)$ para cada $\rho$,
+llegando a se cumple una relaci\'on lineal de pendiente $(1.00090 \pm 0.00006)$
+y ordenada $(-0.00034 \pm 0.00003)$, lo cual indica que se cumple la ecuaci\'on
+de estado del gas ideal para todo el rango. Esto se puede ver en la figura
+\label{pendientes_vs_rhos}
+
+\begin{figure}
+  \begin{center}
+  \includegraphics[scale=0.62]{images/presion_vs_t.png}
+  \caption{Presi\'on en funci\'on de la temperatura para $\rho = 0.76$. Se
+  realizo un ajuste lineal sobre la curva llevando a una pendiente de
+  $(0.76038 \pm 0.00001)$, compatible con la ecuaci\'on de estado del gas
+  ideal.}
+  \label{presion_vs_t}
+\end{center}
+\end{figure}
+
+\begin{figure}
+  \begin{center}
+  \includegraphics[scale=0.62]{images/pendientes_vs_rhos.png}
+  \caption{Pendiente de la curva de $P(T)$ en funci\'on de la densidad sobre la
+  cual esta medida la curva. Se realizo un ajuste lineal y se llego a una
+  pendiente de $(1.00090 \pm 0.00006)$ con ordenada $(-0.00034 \pm 0.00003)$,
+  lo cual indica practicamente una relaci\'on 1 a 1 entre las variables.}
+  \label{presion_vs_t}
+\end{center}
+\end{figure}
 
 \section{Conclusiones}
+
+Se realiz\'o un estudio sobre un sistema NVE sometido a un potencial de
+Lennard Jones, de caracter peri\'odico, integrado bajo el algoritmo de Velocity
+Verlet.
+
+Se pudo comprobar el car\'acter simpl\'ectico del algoritmo, siendo que la
+energ\'ia se conservo durante las mediciones. Se estudi\'o tambien el tiempo
+de termalizaci\'on del sistema cerca de un punto cr\'itico, llegando a la
+conclusi\'on de que en ese rango de par\'ametros eran suficientes $\simeq 2$
+unidades temporales para garantiszar termalizaci\'on. Tambi\'en se estudiaron
+las formas funcionales de las $g(r)$ para distintos estados de la materia,
+pudiendo recuperar la forma esperada por la literatura. Por \'ultimo, se llego
+a algo sorprendente siendo esto la validez de la ecuaci\'on de estado del gas
+ideal para todo el rango de par\'ametros estudiado.
 
 \appendix
 \bibliography{apspaper}  % Produces the bibliography via BibTeX.
